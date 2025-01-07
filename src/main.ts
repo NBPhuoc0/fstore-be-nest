@@ -1,0 +1,47 @@
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { Logger, ValidationPipe } from '@nestjs/common';
+import { setupSwagger } from './common/swagger';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  app.enableCors({
+    origin: '*',
+    // methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    // preflightContinue: false,
+    // optionsSuccessStatus: 204,
+    // credentials: true,
+  });
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: false,
+      transform: true,
+      forbidUnknownValues: false,
+      forbidNonWhitelisted: false,
+      transformOptions: {
+        enableImplicitConversion: true, // <- This line here
+      },
+      validationError: {
+        target: true,
+        value: true,
+      },
+    }),
+  );
+  // app.use(cookieParser());
+
+  // app.useGlobalFilters(new HttpExceptionFilter());
+  // app.useGlobalFilters(new TypeORMExceptionFilter());
+  const logger = new Logger('Main');
+
+  setupSwagger(app);
+
+  await app.listen(AppModule.port);
+
+  // log docs
+  const baseUrl = AppModule.getBaseUrl(app);
+  const url = `http://${baseUrl}:${AppModule.port}`;
+  logger.log(`API Documentation available at ${url}`);
+}
+bootstrap();
