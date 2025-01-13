@@ -1,9 +1,9 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { createBrandDto } from 'src/dto/create-brand.dto';
-import { createCateDto } from 'src/dto/create-cate.dto';
-import { createColorDto } from 'src/dto/create-color.dto';
-import { createSizeDto } from 'src/dto/create-size.dto';
+import { createBrandDto } from 'src/dto/req/create-brand.dto';
+import { createCateDto } from 'src/dto/req/create-cate.dto';
+import { createColorDto } from 'src/dto/req/create-color.dto';
+import { createSizeDto } from 'src/dto/req/create-size.dto';
 import { Brand, Category, Color, Size } from 'src/entities';
 import { Photo } from 'src/entities/photo.entity';
 import { Repository } from 'typeorm';
@@ -18,9 +18,7 @@ export class ProductUtilsService {
     @InjectRepository(Size)
     private sizeRepository: Repository<Size>,
     @InjectRepository(Color)
-    private colorRepository: Repository<Color>,
-    @InjectRepository(Photo)
-    private photoRepository: Repository<Photo>,
+    private colorRepository: Repository<Color>
   ) {}
   //   ** BRAND **
   async getBrands() {

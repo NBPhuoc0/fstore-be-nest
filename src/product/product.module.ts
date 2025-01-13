@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ProductService } from './services/product.service';
-import { ProductController } from './controllers/product.controller';
+import { ProductController } from './product.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import {
   Brand,
@@ -12,11 +12,7 @@ import {
   Size,
   ProductVariant,
 } from 'src/entities';
-import { CategoryController } from './controllers/category.controller';
 import { ProductUtilsService } from './services/product-utils.service';
-import { BrandController } from './controllers/brand.controller';
-import { SizeController } from './controllers/size.controller';
-import { ColorController } from './controllers/color.controller';
 
 @Module({
   imports: [
@@ -28,16 +24,13 @@ import { ColorController } from './controllers/color.controller';
       Color,
       ProductColor,
       ProductVariant,
-      Photo,
+      Photo, 
     ]),
   ],
   controllers: [
-    ProductController,
-    CategoryController,
-    BrandController,
-    SizeController,
-    ColorController,
+    ProductController
   ],
   providers: [ProductService, ProductUtilsService],
+  exports: [ProductService, ProductUtilsService],
 })
 export class ProductModule {}

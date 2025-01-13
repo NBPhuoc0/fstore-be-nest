@@ -26,7 +26,7 @@ import { OrderModule } from './order/order.module';
 import { ProductModule } from './product/product.module';
 import { CommonModule } from './common/common.module';
 import { PromotionModule } from './promotion/promotion.module';
-import { dynamicImport } from './common/helper';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -51,7 +51,7 @@ import { dynamicImport } from './common/helper';
         ProductVariant,
         Photo,
         Promotion,
-        Order,
+        Order, 
         OrderItem,
         Cart,
         CartItem,
@@ -60,6 +60,16 @@ import { dynamicImport } from './common/helper';
       autoLoadEntities: true,
       // dropSchema: true, //!!
       synchronize: true,
+      cache:{
+        type: 'redis',
+        options: {
+          socket: {
+            host: process.env.REDIS_HOST,
+            port: parseInt(process.env.REDIS_PORT),
+          }
+        },
+        duration: 86400000,
+      }
     }),
     AuthModule,
     UserModule,
@@ -67,6 +77,8 @@ import { dynamicImport } from './common/helper';
     ProductModule,
     CommonModule,
     PromotionModule,
+    AdminModule,
+
   ],
   controllers: [AppController],
   providers: [AppService],

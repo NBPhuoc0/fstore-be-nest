@@ -10,13 +10,13 @@ import {
 import { Headers } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { CreateUserDto } from 'src/dto/create-user.dto';
+import { CreateUserDto } from 'src/dto/req/create-user.dto';
 import { SupabaseAuthGuard } from './guards/supabase.auth.guard';
-import { SignInDto } from 'src/dto/sign-in.dto';
+import { SignInDto } from 'src/dto/req/sign-in.dto';
 import { Request } from 'express';
 
+@ApiTags('Authentication')
 @Controller('auth')
-@ApiTags('authentication')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 

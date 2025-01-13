@@ -16,23 +16,23 @@ export class ProductVariant extends BaseEntity {
   id: number;
 
   @Column({ nullable: false })
-  name: string;
+  code: string;
 
-  @Column({ nullable: false })
+  @Column({ nullable: true })
   inventoryQuantity: number;
 
-  @Column({ nullable: false, default: true })
+  @Column({ default: true })
   instock: boolean;
 
-  @ManyToOne(() => Color, { nullable: false })
+  @ManyToOne(() => Color, { createForeignKeyConstraints: false})
   @JoinColumn({ name: 'color_id' })
   color: Color;
 
-  @ManyToOne(() => Size, { nullable: false })
+  @ManyToOne(() => Size, { createForeignKeyConstraints: false })
   @JoinColumn({ name: 'size_id' })
   size: Size;
 
-  @ManyToOne(() => Product, (product) => product.variants, { nullable: false })
+  @ManyToOne(() => Product, (product) => product.variants)
   @JoinColumn({ name: 'product_id' })
   product: Product;
 }

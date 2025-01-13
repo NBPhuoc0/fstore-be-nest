@@ -2,6 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { setupSwagger } from './common/swagger';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { TypeORMExceptionFilter } from './common/filters/typeorm-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -31,8 +33,8 @@ async function bootstrap() {
   );
   // app.use(cookieParser());
 
-  // app.useGlobalFilters(new HttpExceptionFilter());
-  // app.useGlobalFilters(new TypeORMExceptionFilter());
+  app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalFilters(new TypeORMExceptionFilter());
   const logger = new Logger('Main');
 
   setupSwagger(app);

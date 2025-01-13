@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CreateUserDto } from 'src/dto/create-user.dto';
-import { UpdateCartDto } from 'src/dto/update-cart.dto';
-import { UpdateUserDto } from 'src/dto/update-user.dto';
+import { CreateUserDto } from 'src/dto/req/create-user.dto';
+import { UpdateCartDto } from 'src/dto/req/update-cart.dto';
+import { UpdateUserDto } from 'src/dto/req/update-user.dto';
 import { Cart, CartItem, User } from 'src/entities';
 import { Repository } from 'typeorm';
 

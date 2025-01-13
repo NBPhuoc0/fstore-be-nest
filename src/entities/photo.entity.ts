@@ -9,7 +9,7 @@ import {
 import { Product } from './product.entity';
 import { Color } from './color.entity';
 
-@Entity('images')
+@Entity('photos')
 export class Photo extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
@@ -20,11 +20,14 @@ export class Photo extends BaseEntity {
   @Column({ nullable: false })
   position: number;
 
-  @ManyToOne(() => Product, (product) => product.images, { nullable: false })
+  @ManyToOne(() => Product, (product) => product.photos, { nullable: false })
   @JoinColumn({ name: 'product_id' })
   product: Product;
 
-  @ManyToOne(() => Color, { nullable: true })
+  @ManyToOne(() => Color, {
+    nullable: false,
+    createForeignKeyConstraints: false,
+  })
   @JoinColumn({ name: 'color_id' })
   color: Color;
 }

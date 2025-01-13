@@ -1,4 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
-export class PromotionService {}
+export class PromotionService {
+
+    constructor() {}
+}

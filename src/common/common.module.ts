@@ -1,7 +1,10 @@
 import { Module } from '@nestjs/common';
-import { CommonService } from './common.service';
+import { CacheService } from './services/cache.service';
+import { S3ClientService } from './services/s3-client.service';
 
 @Module({
-  providers: [CommonService],
+  imports: [],
+  providers: [CacheService, S3ClientService],
+  exports: [CacheService],
 })
 export class CommonModule {}
