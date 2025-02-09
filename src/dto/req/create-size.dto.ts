@@ -5,5 +5,5 @@ export class createSizeDto {
     example: 'Size name',
     description: 'The name of the size',
   })
-  size: string;
+  name: string;
 }

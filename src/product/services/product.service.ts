@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { createBrandDto } from 'src/dto/req/create-brand.dto';
 import { createColorDto } from 'src/dto/req/create-color.dto';
@@ -32,8 +32,14 @@ export class ProductService {
     private colorRepository: Repository<Color>,
     @InjectRepository(Photo)
     private photoRepository: Repository<Photo>,
+    @InjectRepository(Brand)
+    private brandRepository: Repository<Brand>,
+    @InjectRepository(Category)
+    private categoryRepository: Repository<Category>,
     private dataSource: DataSource,
   ) {}
+
+  private logger = new Logger('ProductService');
 
   async getProducts() {
     return this.productRepository.find();
@@ -44,18 +50,18 @@ export class ProductService {
   }
 
   async createProduct(dto: CreateProdDto) {
-    const product = this.productRepository.create();
+    const product = new Product();
 
     product.name = dto.name;
     product.metaDesc = dto.metaDesc;
     product.originalPrice = dto.originalPrice;
 
     // await product.save();
-    const colors = await this.colorRepository.find({
-      where: { id: In(dto.colorIds) },
+    const colors = await this.colorRepository.findBy({
+      id: In(dto.colors),
     });
-    const sizes = await this.sizeRepository.find({
-      where: { id: In(dto.sizeIds) },
+    const sizes = await this.sizeRepository.findBy({
+      id: In(dto.sizes),
     });
 
     //* Color relation
@@ -72,33 +78,31 @@ export class ProductService {
       product.sizes.push(size);
     }
 
+    //* Brand relation
+    product.brandId = dto.brand;
+
+    //* Category relation
+    product.categoryId = dto.category;
+
+    //* Variant relation
+
+    await product.save(); // get id
+
+    product.variants = [];
     for (const color of colors) {
       for (const size of sizes) {
         const productVariant = this.productVariantRepository.create();
-        productVariant.code = product.code + color + size;
-        productVariant.product = product;
+        productVariant.code = product.code + '-' + color.name + '-' + size.name;
         productVariant.inventoryQuantity = 100; //todo:
         // productVariant.save();
         productVariant.color = color;
         productVariant.size = size;
+
+        product.variants.push(productVariant);
       }
     }
-
-    await product.save();
-
-    //* Brand relation
-    this.dataSource
-      .createQueryBuilder()
-      .relation(Product, 'brand')
-      .of(product)
-      .add({ id: dto.brandId });
-
-    //* Category relation
-    this.dataSource
-      .createQueryBuilder()
-      .relation(Product, 'category')
-      .of(product)
-      .add({ id: dto.categoryId });
+    await this.productRepository.save(product);
+    return product;
   }
 
   async updateProductColorPhoto(prodId: number, colorId: number, url: string) {
@@ -114,6 +118,7 @@ export class ProductService {
       { url },
     );
   }
+
   async updateProductVariantPhoto(
     prodId: number,
     colorId: number,
@@ -136,7 +141,7 @@ export class ProductService {
   }
 
   async updateProductInfo(id: number, data: UpdateProdDto) {
-    return this.productRepository.update(id, data);
+    // return this.productRepository.update(id, data);
   }
 
   async deleteProduct(id: number) {

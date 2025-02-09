@@ -51,7 +51,7 @@ import { AdminModule } from './admin/admin.module';
         ProductVariant,
         Photo,
         Promotion,
-        Order, 
+        Order,
         OrderItem,
         Cart,
         CartItem,
@@ -60,16 +60,16 @@ import { AdminModule } from './admin/admin.module';
       autoLoadEntities: true,
       // dropSchema: true, //!!
       synchronize: true,
-      cache:{
+      cache: {
         type: 'redis',
         options: {
           socket: {
             host: process.env.REDIS_HOST,
             port: parseInt(process.env.REDIS_PORT),
-          }
+          },
         },
         duration: 86400000,
-      }
+      },
     }),
     AuthModule,
     UserModule,
@@ -78,7 +78,6 @@ import { AdminModule } from './admin/admin.module';
     CommonModule,
     PromotionModule,
     AdminModule,
-
   ],
   controllers: [AppController],
   providers: [AppService],

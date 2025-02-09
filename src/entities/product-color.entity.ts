@@ -14,14 +14,14 @@ export class ProductColor extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ nullable: true })
   url: string;
 
   @ManyToOne(() => Product, (product) => product.colors)
   @JoinColumn({ name: 'product_id' })
   product: Product;
 
-  @ManyToOne(() => Color, { createForeignKeyConstraints: false})
+  @ManyToOne(() => Color, { createForeignKeyConstraints: false, eager: true })
   @JoinColumn({ name: 'color_id' })
   color: Color;
 }

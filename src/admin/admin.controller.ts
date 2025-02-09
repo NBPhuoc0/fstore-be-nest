@@ -1,9 +1,24 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseInterceptors,
+  UploadedFiles,
+  UploadedFile,
+  Logger,
+} from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { ProductService } from 'src/product/services/product.service';
 import { ProductUtilsService } from 'src/product/services/product-utils.service';
 import { ApiTags } from '@nestjs/swagger';
-
+import { CreateProdDto } from 'src/dto/req/create-prod.dto';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { createCateDto } from 'src/dto/req/create-cate.dto';
+import { createColorDto } from 'src/dto/req/create-color.dto';
 
 @Controller('admin')
 export class AdminController {
@@ -13,6 +28,7 @@ export class AdminController {
     private readonly productUtilService: ProductUtilsService,
   ) {}
 
+  private logger = new Logger('AdminController');
 
   //* Brand
   @ApiTags('Brand')
@@ -93,7 +109,7 @@ export class AdminController {
 
   @ApiTags('Color')
   @Post('colors')
-  createColor(@Body() createColorDto: any) {
+  createColor(@Body() createColorDto: createColorDto) {
     return this.productUtilService.createColor(createColorDto);
   }
 
@@ -110,7 +126,7 @@ export class AdminController {
   }
 
   //* Size
-    @ApiTags('Size')
+  @ApiTags('Size')
   @Get('sizes')
   findAllSizes() {
     return this.productUtilService.getSizes();
@@ -142,4 +158,59 @@ export class AdminController {
 
   // * Product
 
+  @ApiTags('Product')
+  @Get('products')
+  findAllProducts() {
+    return this.productService.getProducts();
+  }
+
+  @ApiTags('Product')
+  @Get('products/:id')
+  findOneProduct(@Param('id') id: string) {
+    return this.productService.getProductById(+id);
+  }
+
+  @ApiTags('Product')
+  @Post('products')
+  async createProduct(@Body() createProductDto: CreateProdDto) {
+    // let tset = { ...createProductDto };
+    // this.logger.log(tset);
+    return await this.productService.createProduct(createProductDto);
+  }
+
+  @ApiTags('Product')
+  @Patch('products/:id')
+  updateProduct(@Body() updateProductDto: any, @Param('id') id: string) {
+    return this.productService.updateProductInfo(+id, updateProductDto);
+  }
+
+  @ApiTags('Product')
+  @UseInterceptors(FileInterceptor('files'))
+  @Patch('products/:prod/color/:color')
+  updateProductColorPhoto(
+    @UploadedFile() file: Express.Multer.File,
+    @Param('prod') id: number,
+    @Param('color') color: number,
+  ) {
+    let photos;
+    return this.productService.updateProductColorPhoto(id, color, photos);
+  }
+
+  @ApiTags('Product')
+  @UseInterceptors(FilesInterceptor('files'))
+  @Patch('products/:prod/variant/:color')
+  updateProductVariantPhoto(
+    @UploadedFiles() files: Express.Multer.File[],
+    @Param('prod') id: number,
+    @Param('color') color: number,
+  ) {
+    let photos = [];
+    return this.productService.updateProductVariantPhoto(id, color, photos);
+  }
+
+  @ApiTags('Product')
+  @Delete('products/:id')
+  removeProduct(@Param('id') id: string) {
+    return this.productService.deleteProduct(+id);
+  }
 }

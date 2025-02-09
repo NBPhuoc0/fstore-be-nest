@@ -22,13 +22,22 @@ export class CartItem extends BaseEntity {
   @JoinColumn({ name: 'cart_id' })
   cart: Cart;
 
+  @Column()
+  cartId: number;
+
   @ManyToOne(() => ProductVariant, { nullable: false })
   @JoinColumn({ name: 'variant_id' })
   variant: ProductVariant;
 
+  @Column()
+  variantId: number;
+
   @ManyToOne(() => Product, { nullable: false })
   @JoinColumn({ name: 'product_id' })
   product: Product;
+
+  @Column()
+  productId: number;
 
   @Column({ nullable: false })
   quantity: number;

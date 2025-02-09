@@ -9,6 +9,7 @@ import {
   Index,
 } from 'typeorm';
 import { Product } from './product.entity';
+import { PromotionType } from 'src/common/enums';
 
 @Entity('promotions')
 @Index('idx_promotions_code', ['urlHandle'], { unique: true })
@@ -25,16 +26,16 @@ export class Promotion extends BaseEntity {
   @Column({ nullable: false })
   description: string;
 
-  @Column({ nullable: false })
+  @Column({ nullable: false, default: false })
   status: boolean;
 
   @Column({ nullable: false })
-  type: string;
+  type: PromotionType;
 
   @Column({ nullable: false, type: 'float' })
   value: number;
 
-  @Column({ nullable: false, type: 'float' })
+  @Column({ nullable: true, type: 'float' })
   maxDiscount: number;
 
   @Column({ nullable: false })
@@ -52,6 +53,8 @@ export class Promotion extends BaseEntity {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @OneToMany(() => Product, (product) => product.promotion)
+  @OneToMany(() => Product, (product) => product.promotion, {
+    orphanedRowAction: 'nullify',
+  })
   products: Product[];
 }

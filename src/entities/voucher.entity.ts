@@ -1,3 +1,4 @@
+import { VoucherType } from 'src/common/enums';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -27,15 +28,15 @@ export class Voucher extends BaseEntity {
   status: boolean;
 
   @Column({ nullable: false })
-  type: string;
+  type: VoucherType;
 
   @Column({ nullable: false, type: 'float' })
   value: number;
 
-  @Column({ nullable: false, type: 'float' })
+  @Column({ nullable: true, type: 'float' })
   maxDiscount: number;
 
-  @Column({ nullable: false })
+  @Column({ nullable: true })
   image: string;
 
   @Column({ nullable: false, type: 'timestamp' })
@@ -47,7 +48,7 @@ export class Voucher extends BaseEntity {
   @Column({ nullable: false })
   quantity: number;
 
-  @Column({ nullable: false })
+  @Column({ nullable: false, default: 0 })
   usedQuantity: number;
 
   @CreateDateColumn()

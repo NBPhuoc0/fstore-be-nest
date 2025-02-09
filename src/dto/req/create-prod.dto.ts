@@ -23,24 +23,23 @@ export class CreateProdDto {
     example: 1,
     description: 'The category id of the product',
   })
-  categoryId: number;
+  category: number;
 
   @ApiProperty({
     example: 1,
     description: 'The brand id of the product',
   })
-  brandId: number;
+  brand: number;
 
   @ApiProperty({
     example: [1, 2, 3, 4],
     description: 'The list color of the product',
   })
-  colorIds: number[];
+  colors: number[];
 
   @ApiProperty({
     example: [1, 2, 3, 4],
     description: 'The list size of the product',
   })
-  sizeIds: number[];
-
+  sizes: number[];
 }

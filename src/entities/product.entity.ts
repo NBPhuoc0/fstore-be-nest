@@ -12,6 +12,7 @@ import {
   UpdateDateColumn,
   Index,
   AfterInsert,
+  BeforeInsert,
 } from 'typeorm';
 import { Promotion } from './promotion.entity';
 import { Category } from './category.entity';
@@ -23,16 +24,16 @@ import { Photo } from './photo.entity';
 import slugify from 'slugify';
 
 @Entity('products')
-@Index('idx_unique_code', ['code'], { unique: true })
+@Index('idx_unique_code', ['code'], { unique: true, nullFiltered: true })
 @Index('idx_unique_url_handle', ['urlHandle'], { unique: true })
 export class Product extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ nullable: true })
   code: string;
 
-  @Column()
+  @Column({ nullable: true })
   urlHandle: string;
 
   @Column({ nullable: false })
@@ -50,7 +51,7 @@ export class Product extends BaseEntity {
   @Column({ nullable: false, type: 'decimal' })
   originalPrice: number;
 
-  @Column({ type: 'decimal' })
+  @Column({ type: 'decimal', nullable: true })
   salePrice: number;
 
   @CreateDateColumn()
@@ -59,19 +60,37 @@ export class Product extends BaseEntity {
   @UpdateDateColumn()
   updatedDate: Date;
 
-  @ManyToOne(() => Promotion, (promotion) => promotion.products)
-  @JoinColumn({ name: 'promotion_id' })
+  @Column({ nullable: true })
+  promotionId: number;
+
+  @ManyToOne(() => Promotion, (promotion) => promotion.products, {
+    nullable: true,
+    eager: true,
+  })
+  @JoinColumn({})
   promotion: Promotion;
 
-  @ManyToOne(() => Category, { nullable: false })
-  @JoinColumn({ name: 'category_id' })
+  @Column({ nullable: true })
+  categoryId: number;
+
+  @ManyToOne(() => Category, (cate) => cate.products, {
+    nullable: false,
+    eager: true,
+  })
+  @JoinColumn()
   category: Category;
 
-  @ManyToOne(() => Brand, { nullable: false })
-  @JoinColumn({ name: 'brand_id' })
+  @Column({ nullable: true })
+  brandId: number;
+
+  @ManyToOne(() => Brand, (brand) => brand.products, {
+    nullable: false,
+    eager: true,
+  })
+  @JoinColumn({})
   brand: Brand;
 
-  @ManyToMany(() => Size, { nullable: false, cascade: true })
+  @ManyToMany(() => Size, { nullable: false, cascade: true, eager: true })
   @JoinTable({
     name: 'product_size',
     joinColumns: [{ name: 'product_id' }],
@@ -89,21 +108,23 @@ export class Product extends BaseEntity {
   @OneToMany(() => ProductVariant, (variant) => variant.product, {
     orphanedRowAction: 'delete',
     cascade: true,
+    eager: true,
   })
   variants: ProductVariant[];
 
   @OneToMany(() => Photo, (image) => image.product, {
     orphanedRowAction: 'delete',
     cascade: true,
+    eager: true,
   })
   photos: Photo[];
 
   @AfterInsert()
-  async generateUrlHandle() {
+  generateUrlHandle() {
     this.urlHandle =
       slugify(this.name, { lower: true, locale: 'vi' }) + '-' + this.id;
-    this.code = getFirst4Char(this.name);
-    await this.save();
+    this.code = getFirst4Char(this.name) + '-' + this.id;
+    this.save();
   }
 }
 

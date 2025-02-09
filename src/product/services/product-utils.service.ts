@@ -18,7 +18,7 @@ export class ProductUtilsService {
     @InjectRepository(Size)
     private sizeRepository: Repository<Size>,
     @InjectRepository(Color)
-    private colorRepository: Repository<Color>
+    private colorRepository: Repository<Color>,
   ) {}
   //   ** BRAND **
   async getBrands() {
@@ -43,7 +43,10 @@ export class ProductUtilsService {
 
   //   ** CATEGORY **
   async getCategories() {
-    return this.categoryRepository.find({ relations: ['parent'] });
+    return this.categoryRepository.find({
+      relations: ['parent'],
+      order: { id: 'asc' },
+    });
   }
 
   async getCategoryById(id: number) {

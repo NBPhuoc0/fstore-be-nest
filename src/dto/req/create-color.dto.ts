@@ -5,5 +5,5 @@ export class createColorDto {
     example: 'Color name',
     description: 'The name of the color',
   })
-  color: string;
+  name: string;
 }

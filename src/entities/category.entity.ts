@@ -30,18 +30,17 @@ export class Category extends BaseEntity {
   @OneToMany(() => Product, (product) => product.category)
   products: Product[];
 
-  @ManyToOne(() => Category, (category) => category.children, { cascade: true })
+  @ManyToOne(() => Category, (category) => category.children, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'parent_id' })
   parent: Category;
 
-  @OneToMany(() => Category, (category) => category.parent)
+  @OneToMany(() => Category, (category) => category.parent, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   children: Category[];
-
-  // @TreeParent({ onDelete: 'SET NULL' })
-  // parent: Category;
-
-  // @TreeChildren({ cascade: true })
-  // children: Category[];
 
   @BeforeInsert()
   @BeforeUpdate()

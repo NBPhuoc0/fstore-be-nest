@@ -13,11 +13,5 @@ export class Color extends BaseEntity {
   id: number;
 
   @Column({ nullable: false })
-  color: string;
-
-  @OneToMany(() => Color, (color) => color.parent)
-  parent: Color;
-
-  @ManyToOne(() => Color, (color) => color.parent)
-  children: Color[];
+  name: string;
 }
