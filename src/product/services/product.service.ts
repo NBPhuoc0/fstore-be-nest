@@ -10,7 +10,6 @@ import {
   Category,
   Color,
   Product,
-  ProductColor,
   ProductVariant,
   Size,
 } from 'src/entities';
@@ -19,34 +18,16 @@ import { DataSource, In, Repository } from 'typeorm';
 
 @Injectable()
 export class ProductService {
-  constructor(
-    @InjectRepository(Product)
-    private productRepository: Repository<Product>,
-    @InjectRepository(ProductVariant)
-    private productVariantRepository: Repository<ProductVariant>,
-    @InjectRepository(ProductColor)
-    private productColorRepository: Repository<ProductColor>,
-    @InjectRepository(Size)
-    private sizeRepository: Repository<Size>,
-    @InjectRepository(Color)
-    private colorRepository: Repository<Color>,
-    @InjectRepository(Photo)
-    private photoRepository: Repository<Photo>,
-    @InjectRepository(Brand)
-    private brandRepository: Repository<Brand>,
-    @InjectRepository(Category)
-    private categoryRepository: Repository<Category>,
-    private dataSource: DataSource,
-  ) {}
+  constructor(private dataSource: DataSource) {}
 
   private logger = new Logger('ProductService');
 
   async getProducts() {
-    return this.productRepository.find();
+    return Product.find();
   }
 
   async getProductById(id: number) {
-    return this.productRepository.findBy({ id });
+    return Product.findBy({ id });
   }
 
   async createProduct(dto: CreateProdDto) {
@@ -57,19 +38,17 @@ export class ProductService {
     product.originalPrice = dto.originalPrice;
 
     // await product.save();
-    const colors = await this.colorRepository.findBy({
+    const colors = await Color.findBy({
       id: In(dto.colors),
     });
-    const sizes = await this.sizeRepository.findBy({
+    const sizes = await Size.findBy({
       id: In(dto.sizes),
     });
 
     //* Color relation
     product.colors = [];
     for (const color of colors) {
-      const productColor = this.productColorRepository.create();
-      productColor.color = color;
-      product.colors.push(productColor);
+      product.colors.push(color);
     }
 
     //* Size relation
@@ -91,7 +70,7 @@ export class ProductService {
     product.variants = [];
     for (const color of colors) {
       for (const size of sizes) {
-        const productVariant = this.productVariantRepository.create();
+        const productVariant = ProductVariant.create();
         productVariant.code = product.code + '-' + color.name + '-' + size.name;
         productVariant.inventoryQuantity = 100; //todo:
         // productVariant.save();
@@ -101,22 +80,8 @@ export class ProductService {
         product.variants.push(productVariant);
       }
     }
-    await this.productRepository.save(product);
+    await Product.save(product);
     return product;
-  }
-
-  async updateProductColorPhoto(prodId: number, colorId: number, url: string) {
-    return await this.productColorRepository.update(
-      {
-        product: {
-          id: prodId,
-        },
-        color: {
-          id: colorId,
-        },
-      },
-      { url },
-    );
   }
 
   async updateProductVariantPhoto(
@@ -124,12 +89,12 @@ export class ProductService {
     colorId: number,
     urls: string[],
   ) {
-    const product = await this.productRepository.findOneBy({ id: prodId });
+    const product = await Product.findOneBy({ id: prodId });
 
-    const color = await this.colorRepository.findOneBy({ id: colorId });
+    const color = await Color.findOneBy({ id: colorId });
 
     for (const i in urls) {
-      const photo = this.photoRepository.create();
+      const photo = Photo.create();
       photo.url = urls[i];
       photo.position = +i;
       photo.color = color;
@@ -141,10 +106,10 @@ export class ProductService {
   }
 
   async updateProductInfo(id: number, data: UpdateProdDto) {
-    // return this.productRepository.update(id, data);
+    // return Product.update(id, data);
   }
 
   async deleteProduct(id: number) {
-    return this.productRepository.delete(id);
+    return Product.delete(id);
   }
 }

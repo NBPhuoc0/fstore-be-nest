@@ -8,20 +8,9 @@ import { DataSource, Repository } from 'typeorm';
 
 @Injectable()
 export class OrderService {
-  constructor(
-    @InjectRepository(Order)
-    private orderRepository: Repository<Order>,
-    @InjectRepository(OrderItem)
-    private orderItemRepository: Repository<OrderItem>,
-    @InjectRepository(Cart)
-    private cartRepository: Repository<Cart>,
-    @InjectRepository(CartItem)
-    private cartItemRepository: Repository<CartItem>,
-    @InjectRepository(Voucher)
-    private voucherRepository: Repository<Voucher>,
-    private dataSource: DataSource,
-  ) {}
+  constructor(private dataSource: DataSource) {}
 
+  //
   async createOrder(dto: CreateOrderDto): Promise<Order> {
     const order = new Order();
 
@@ -39,7 +28,7 @@ export class OrderService {
       order.status = OrderStatus.PENDING;
     }
 
-    const cart = await this.cartRepository.findOne({
+    const cart = await Cart.findOne({
       where: { userId: dto.userId },
       relations: ['cartItems'],
     });
@@ -65,7 +54,7 @@ export class OrderService {
 
     // Apply voucher
     if (dto.voucherId) {
-      voucher = await this.voucherRepository.findOneBy({
+      voucher = await Voucher.findOneBy({
         id: dto.voucherId,
       });
 
@@ -113,30 +102,30 @@ export class OrderService {
   }
 
   async updateOrderStatus(id: number, status: OrderStatus) {
-    await this.orderRepository.update({ id }, { status });
+    await Order.update({ id }, { status });
   }
 
   async getOrderById(id: number) {
-    return this.orderRepository.findOne({
+    return Order.findOne({
       where: { id },
       relations: ['orderItems'],
     });
   }
 
   async getOrdersByUserId(userId: number) {
-    return this.orderRepository.find({
+    return Order.find({
       where: { userId },
       relations: ['orderItems'],
     });
   }
 
   async getOrders() {
-    return this.orderRepository.find({
+    return Order.find({
       relations: ['orderItems'],
     });
   }
 
   async deleteOrder(id: number) {
-    await this.orderRepository.delete({ id });
+    await Order.delete({ id });
   }
 }

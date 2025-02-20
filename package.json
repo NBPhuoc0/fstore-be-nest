@@ -32,6 +32,7 @@
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/swagger": "^8.1.0",
     "@nestjs/typeorm": "^10.0.2",
+    "@payos/node": "^1.0.10",
     "@supabase/supabase-js": "^2.47.10",
     "@types/multer": "^1.4.12",
     "cacheable": "^1.8.7",

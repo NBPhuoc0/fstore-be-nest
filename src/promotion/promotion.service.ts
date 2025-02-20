@@ -9,58 +9,38 @@ import { In, Repository } from 'typeorm';
 
 @Injectable()
 export class PromotionService {
-  constructor(
-    @InjectRepository(Promotion)
-    private promotionRepository: Repository<Promotion>,
-    @InjectRepository(Voucher)
-    private promotionItemRepository: Repository<Voucher>,
-    @InjectRepository(Product)
-    private productRepository: Repository<Product>,
-    private productService: ProductService,
-  ) {}
+  constructor() {}
 
   //**Products Promotion */
   async getPromotions() {
-    return this.promotionRepository.find();
+    return Promotion.find();
   }
 
   async getPromotionById(id: number) {
-    return this.promotionRepository.findOneBy({ id });
+    return Promotion.findOneBy({ id });
   }
 
   async createPromotion(dto: CreatePromotionDto) {
-    const promotion = this.promotionRepository.create(dto);
+    const promotion = Promotion.create({ ...dto });
     promotion.urlHandle = slugify(dto.name, { lower: true });
-    return this.promotionRepository.save(promotion);
+    return Promotion.save(promotion);
   }
 
   async addProductToPromotion(promotionId: number, productIds: number[]) {
-    return await this.productRepository.update(
-      { id: In(productIds) },
-      { promotionId },
-    );
+    return await Product.update({ id: In(productIds) }, { promotionId });
   }
 
   async removeProductFromPromotion(promotionId: number, productIds: number[]) {
-    return await this.productRepository.update(
-      { id: In(productIds) },
-      { promotionId: null },
-    );
+    return await Product.update({ id: In(productIds) }, { promotionId: null });
   }
 
   async disablePromotion(promotionId: number) {
-    await this.promotionRepository.update(
-      { id: promotionId },
-      { status: false },
-    );
-    return this.productRepository.update(
-      { promotionId },
-      { promotionId: null },
-    );
+    await Promotion.update({ id: promotionId }, { status: false });
+    return Product.update({ promotionId }, { promotionId: null });
   }
 
   async enablePromotion(promotionId: number) {
-    const promo = await this.promotionRepository.findOne({
+    const promo = await Promotion.findOne({
       where: { id: promotionId },
       relations: ['products'],
     });
@@ -73,42 +53,36 @@ export class PromotionService {
   }
 
   async removePromotion(promotionId: number) {
-    return this.promotionRepository.delete({ id: promotionId });
+    return Promotion.delete({ id: promotionId });
   }
 
   //**Voucher */
 
   async getVouchers() {
-    return this.promotionItemRepository.find();
+    return Voucher.find();
   }
 
   async getVoucherById(id: number) {
-    return this.promotionItemRepository.findOneBy({ id });
+    return Voucher.findOneBy({ id });
   }
 
   async createVoucher(dto: CreateVoucherDto) {
-    const voucher = this.promotionItemRepository.create(dto);
+    const voucher = Voucher.create({ ...dto });
     voucher.code = slugify(dto.name, { lower: true });
-    return this.promotionItemRepository.save(voucher);
+    return Voucher.save(voucher);
   }
 
   async removeVoucher(voucherId: number) {
-    return this.promotionItemRepository.delete({
+    return Voucher.delete({
       id: voucherId,
     });
   }
 
   async disableVoucher(voucherId: number) {
-    return this.promotionItemRepository.update(
-      { id: voucherId },
-      { status: false },
-    );
+    return Voucher.update({ id: voucherId }, { status: false });
   }
 
   async enableVoucher(voucherId: number) {
-    return this.promotionItemRepository.update(
-      { id: voucherId },
-      { status: true },
-    );
+    return Voucher.update({ id: voucherId }, { status: true });
   }
 }

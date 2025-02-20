@@ -11,7 +11,6 @@ import {
   Category,
   Brand,
   Size,
-  ProductColor,
   ProductVariant,
   Photo,
   Promotion,
@@ -33,6 +32,7 @@ import { AdminModule } from './admin/admin.module';
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot({
       type: 'postgres',
+      // ssl: true,
       url: process.env.DB_URL,
       // host: process.env.DB_HOST,
       // port: parseInt(<string>process.env.DB_PORT) || 5432,
@@ -47,7 +47,6 @@ import { AdminModule } from './admin/admin.module';
         Category,
         Brand,
         Size,
-        ProductColor,
         ProductVariant,
         Photo,
         Promotion,

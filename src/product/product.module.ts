@@ -8,28 +8,14 @@ import {
   Color,
   Photo,
   Product,
-  ProductColor,
   Size,
   ProductVariant,
 } from 'src/entities';
 import { ProductUtilsService } from './services/product-utils.service';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([
-      Product,
-      Category,
-      Brand,
-      Size,
-      Color,
-      ProductColor,
-      ProductVariant,
-      Photo, 
-    ]),
-  ],
-  controllers: [
-    ProductController
-  ],
+  imports: [],
+  controllers: [ProductController],
   providers: [ProductService, ProductUtilsService],
   exports: [ProductService, ProductUtilsService],
 })

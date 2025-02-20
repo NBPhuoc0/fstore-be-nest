@@ -2,10 +2,11 @@ import { Module } from '@nestjs/common';
 import { PromotionService } from './promotion.service';
 import { PromotionController } from './promotion.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Promotion } from 'src/entities';
+import { Product, Promotion, Voucher } from 'src/entities';
+import { ProductModule } from 'src/product/product.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Promotion])],
+  imports: [],
   controllers: [PromotionController],
   providers: [PromotionService],
 })

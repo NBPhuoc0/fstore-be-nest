@@ -18,10 +18,10 @@ import { Promotion } from './promotion.entity';
 import { Category } from './category.entity';
 import { Brand } from './brand.entity';
 import { Size } from './size.entity';
-import { ProductColor } from './product-color.entity';
 import { ProductVariant } from './product-variant.entity';
 import { Photo } from './photo.entity';
 import slugify from 'slugify';
+import { Color } from './color.entity';
 
 @Entity('products')
 @Index('idx_unique_code', ['code'], { unique: true, nullFiltered: true })
@@ -98,12 +98,13 @@ export class Product extends BaseEntity {
   })
   sizes: Size[];
 
-  @OneToMany(() => ProductColor, (productColor) => productColor.product, {
-    orphanedRowAction: 'delete',
-    cascade: true,
-    eager: true,
+  @ManyToMany(() => Color, { nullable: false, cascade: true, eager: true })
+  @JoinTable({
+    name: 'product_color',
+    joinColumns: [{ name: 'product_id' }],
+    inverseJoinColumns: [{ name: 'color_id' }],
   })
-  colors: ProductColor[];
+  colors: Color[];
 
   @OneToMany(() => ProductVariant, (variant) => variant.product, {
     orphanedRowAction: 'delete',

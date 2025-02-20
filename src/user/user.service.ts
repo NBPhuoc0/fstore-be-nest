@@ -9,41 +9,34 @@ import { Repository } from 'typeorm';
 @Injectable()
 export class UserService {
   private logger = new Logger('UserService');
-  constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-    @InjectRepository(Cart)
-    private readonly cartRepository: Repository<Cart>,
-    @InjectRepository(CartItem)
-    private readonly cartItemRepository: Repository<CartItem>,
-  ) {}
+  constructor() {}
 
   async getUserById(id: string): Promise<User> {
-    return await this.userRepository.findOne({
+    return User.findOne({
       where: { id },
       relations: ['cart', 'cart.cartItems', 'cart.cartItems.product'],
     });
   }
 
   async getUserByEmail(email: string): Promise<User> {
-    return await this.userRepository.findOneBy({ email });
+    return User.findOneBy({ email });
   }
 
   async createUser(id: string, user: CreateUserDto): Promise<User> {
-    const newUser = this.userRepository.create(user);
-    newUser.cart = this.cartRepository.create();
+    const newUser = User.create(user);
+    newUser.cart = Cart.create();
     newUser.cart.cartItems = [];
     newUser.id = id;
 
-    return await this.userRepository.save(newUser);
+    return await newUser.save();
   }
 
   async getAllUsers(): Promise<User[]> {
-    return await this.userRepository.find();
+    return await User.find();
   }
 
   async updateUser(id: string, updateData: UpdateUserDto): Promise<User> {
-    await this.userRepository.update(id, updateData);
+    await User.update(id, updateData);
     return this.getUserById(id);
   }
 
@@ -56,7 +49,7 @@ export class UserService {
     const user = await this.getUserById(userId);
     const cart = user.cart;
 
-    const cartItem = await this.cartItemRepository.findOne({
+    const cartItem = await CartItem.findOne({
       where: {
         cart: { id: cart.id },
         product: { id: item.productId },
@@ -68,8 +61,7 @@ export class UserService {
       cartItem.quantity += item.quantity;
       return await cartItem.save();
     } else {
-      return await this.cartItemRepository
-        .createQueryBuilder()
+      return await CartItem.createQueryBuilder()
         .insert()
         .values({
           cart: { id: cart.id },

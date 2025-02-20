@@ -4,7 +4,6 @@ export { Product } from './product.entity';
 export { Category } from './category.entity';
 export { Brand } from './brand.entity';
 export { Size } from './size.entity';
-export { ProductColor } from './product-color.entity';
 export { ProductVariant } from './product-variant.entity';
 export { Photo } from './photo.entity';
 export { Promotion } from './promotion.entity';
@@ -21,7 +20,6 @@ export { Voucher } from './voucher.entity';
 //   Category,
 //   Brand,
 //   Size,
-//   ProductColor,
 //   ProductVariant,
 //   Photo,
 //   Promotion,
