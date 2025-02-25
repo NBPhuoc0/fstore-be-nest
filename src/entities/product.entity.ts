@@ -20,12 +20,14 @@ import { Brand } from './brand.entity';
 import { Size } from './size.entity';
 import { ProductVariant } from './product-variant.entity';
 import { Photo } from './photo.entity';
-import slugify from 'slugify';
 import { Color } from './color.entity';
 
 @Entity('products')
-@Index('idx_unique_code', ['code'], { unique: true, nullFiltered: true })
-@Index('idx_unique_url_handle', ['urlHandle'], { unique: true })
+@Index('idx_prod_unique_code', ['code'], { unique: true, nullFiltered: true })
+@Index('idx_prod_unique_url_handle', ['urlHandle'], {
+  unique: true,
+  nullFiltered: true,
+})
 export class Product extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
@@ -33,61 +35,61 @@ export class Product extends BaseEntity {
   @Column({ nullable: true })
   code: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, name: 'url_handle' })
   urlHandle: string;
 
   @Column({ nullable: false })
   name: string;
 
-  @Column({ nullable: false })
+  @Column({ nullable: false, name: 'meta_desc' })
   metaDesc: string;
 
   @Column({ default: true })
   display: boolean;
 
-  @Column({ default: true })
+  @Column({ default: true, name: 'inventory_status' })
   inventoryStatus: boolean;
 
-  @Column({ nullable: false, type: 'decimal' })
+  @Column({ nullable: false, type: 'decimal', name: 'original_price' })
   originalPrice: number;
 
-  @Column({ type: 'decimal', nullable: true })
+  @Column({ type: 'decimal', nullable: true, name: 'sale_price' })
   salePrice: number;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_date' })
   createdDate: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_date' })
   updatedDate: Date;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, name: 'promotion_id' })
   promotionId: number;
 
   @ManyToOne(() => Promotion, (promotion) => promotion.products, {
     nullable: true,
     eager: true,
   })
-  @JoinColumn({})
+  @JoinColumn({ name: 'promotion_id' })
   promotion: Promotion;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, name: 'category_id' })
   categoryId: number;
 
   @ManyToOne(() => Category, (cate) => cate.products, {
     nullable: false,
     eager: true,
   })
-  @JoinColumn()
+  @JoinColumn({ name: 'category_id' })
   category: Category;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, name: 'brand_id' })
   brandId: number;
 
   @ManyToOne(() => Brand, (brand) => brand.products, {
     nullable: false,
     eager: true,
   })
-  @JoinColumn({})
+  @JoinColumn({ name: 'brand_id' })
   brand: Brand;
 
   @ManyToMany(() => Size, { nullable: false, cascade: true, eager: true })
@@ -107,32 +109,13 @@ export class Product extends BaseEntity {
   colors: Color[];
 
   @OneToMany(() => ProductVariant, (variant) => variant.product, {
-    orphanedRowAction: 'delete',
     cascade: true,
-    eager: true,
   })
   variants: ProductVariant[];
 
   @OneToMany(() => Photo, (image) => image.product, {
-    orphanedRowAction: 'delete',
     cascade: true,
     eager: true,
   })
   photos: Photo[];
-
-  @AfterInsert()
-  generateUrlHandle() {
-    this.urlHandle =
-      slugify(this.name, { lower: true, locale: 'vi' }) + '-' + this.id;
-    this.code = getFirst4Char(this.name) + '-' + this.id;
-    this.save();
-  }
-}
-
-function getFirst4Char(str: string): string {
-  const words = str.split('-');
-  return words
-    .slice(0, 4)
-    .map((word) => word[0].toUpperCase())
-    .join('');
 }

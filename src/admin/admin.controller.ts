@@ -219,8 +219,7 @@ export class AdminController {
     @Param('prod') id: number,
     @Param('color') color: number,
   ) {
-    let photos = [];
-    return this.productService.updateProductVariantPhoto(id, color, photos);
+    return this.productService.updateProductVariantPhoto(id, color, files);
   }
 
   @ApiTags('Product')

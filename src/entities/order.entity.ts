@@ -32,16 +32,16 @@ export class Order extends BaseEntity {
   @Column({ nullable: false })
   phone: string;
 
-  @Column({ nullable: false, enum: OrderPaymentMethod })
+  @Column({ nullable: false, enum: OrderPaymentMethod, name: 'payment_method' })
   paymentMethod: OrderPaymentMethod;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, name: 'payment_ref' })
   paymentRef: string;
 
-  @Column({ nullable: false, type: 'float' })
+  @Column({ nullable: false, type: 'float', name: 'shipping_fee' })
   shippingFee: number;
 
-  @Column({ nullable: false, type: 'float' })
+  @Column({ nullable: false, type: 'float', name: 'sub_total' })
   subTotal: number;
 
   @Column({ nullable: false, type: 'float' })
@@ -50,24 +50,24 @@ export class Order extends BaseEntity {
   @Column({ nullable: false, type: 'float' })
   total: number;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: string;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: string;
 
   @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @Column()
+  @Column({ nullable: false, name: 'user_id' })
   userId: number;
 
   @ManyToOne(() => Voucher, { nullable: true })
   @JoinColumn({ name: 'voucher_id' })
   voucher: Voucher;
 
-  @Column()
+  @Column({ nullable: true, name: 'voucher_id' })
   voucherId: number;
 
   @OneToMany(() => OrderItem, (orderItem) => orderItem.order)

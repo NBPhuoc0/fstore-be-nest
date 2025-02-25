@@ -33,27 +33,27 @@ export class Voucher extends BaseEntity {
   @Column({ nullable: false, type: 'float' })
   value: number;
 
-  @Column({ nullable: true, type: 'float' })
+  @Column({ nullable: true, type: 'float', name: 'max_discount' })
   maxDiscount: number;
 
   @Column({ nullable: true })
   image: string;
 
-  @Column({ nullable: false, type: 'timestamp' })
+  @Column({ nullable: false, type: 'timestamp', name: 'start_date' })
   startDate: Date;
 
-  @Column({ nullable: false, type: 'timestamp' })
+  @Column({ nullable: false, type: 'timestamp', name: 'end_date' })
   endDate: Date;
 
   @Column({ nullable: false })
   quantity: number;
 
-  @Column({ nullable: false, default: 0 })
+  @Column({ nullable: false, default: 0, name: 'used_quantity' })
   usedQuantity: number;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 }

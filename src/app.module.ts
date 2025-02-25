@@ -56,6 +56,7 @@ import { AdminModule } from './admin/admin.module';
         CartItem,
         Voucher,
       ],
+      migrations: ['seed/migrations/*.ts'],
       autoLoadEntities: true,
       // dropSchema: true, //!!
       synchronize: true,

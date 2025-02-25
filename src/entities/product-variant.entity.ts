@@ -18,27 +18,34 @@ export class ProductVariant extends BaseEntity {
   @Column({ nullable: false })
   code: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, name: 'inventory_quantity' })
   inventoryQuantity: number;
 
   @Column({ default: true })
   instock: boolean;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, name: 'color_id' })
   colorId: number;
 
   @ManyToOne(() => Color, { createForeignKeyConstraints: false })
-  @JoinColumn({})
+  @JoinColumn({ name: 'color_id' })
   color: Color;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, name: 'size_id' })
   sizeId: number;
 
-  @ManyToOne(() => Size, { createForeignKeyConstraints: false })
-  @JoinColumn({})
+  @ManyToOne(() => Size, {
+    createForeignKeyConstraints: false,
+  })
+  @JoinColumn({ name: 'size_id' })
   size: Size;
 
-  @ManyToOne(() => Product, (product) => product.variants)
+  @Column({ nullable: true, name: 'product_id' })
+  productId: number;
+
+  @ManyToOne(() => Product, (product) => product.variants, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'product_id' })
   product: Product;
 }

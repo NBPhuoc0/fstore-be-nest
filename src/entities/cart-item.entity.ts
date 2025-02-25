@@ -22,21 +22,21 @@ export class CartItem extends BaseEntity {
   @JoinColumn({ name: 'cart_id' })
   cart: Cart;
 
-  @Column()
+  @Column({ nullable: false, name: 'cart_id' })
   cartId: number;
 
   @ManyToOne(() => ProductVariant, { nullable: false })
   @JoinColumn({ name: 'variant_id' })
   variant: ProductVariant;
 
-  @Column()
+  @Column({ nullable: false, name: 'variant_id' })
   variantId: number;
 
   @ManyToOne(() => Product, { nullable: false })
   @JoinColumn({ name: 'product_id' })
   product: Product;
 
-  @Column()
+  @Column({ nullable: false, name: 'product_id' })
   productId: number;
 
   @Column({ nullable: false })

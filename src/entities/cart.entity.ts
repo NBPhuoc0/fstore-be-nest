@@ -16,9 +16,10 @@ export class Cart extends BaseEntity {
   id: number;
 
   @OneToOne(() => User, (user) => user.cart)
+  @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @Column()
+  @Column({ name: 'user_id' })
   userId: number;
 
   @OneToMany(() => CartItem, (cartItem) => cartItem.cart)

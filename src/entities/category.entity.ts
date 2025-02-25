@@ -11,12 +11,17 @@ import {
   TreeChildren,
   BeforeUpdate,
   BeforeInsert,
+  Index,
 } from 'typeorm';
 import { Product } from './product.entity';
 import slugify from 'slugify';
 
 @Entity('product_categories')
 // @Tree('materialized-path')
+@Index('idx_cate_unique_url_handle', ['urlHandle'], {
+  unique: true,
+  nullFiltered: true,
+})
 export class Category extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
@@ -24,7 +29,7 @@ export class Category extends BaseEntity {
   @Column({ nullable: false })
   name: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, name: 'url_handle' })
   urlHandle: string;
 
   @OneToMany(() => Product, (product) => product.category)
@@ -38,7 +43,6 @@ export class Category extends BaseEntity {
 
   @OneToMany(() => Category, (category) => category.parent, {
     cascade: true,
-    onDelete: 'CASCADE',
   })
   children: Category[];
 

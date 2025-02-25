@@ -20,14 +20,22 @@ export class Photo extends BaseEntity {
   @Column({ nullable: false })
   position: number;
 
-  @ManyToOne(() => Product, (product) => product.photos, { nullable: false })
+  @ManyToOne(() => Product, (product) => product.photos, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'product_id' })
   product: Product;
 
+  @Column({ nullable: true, name: 'product_id' })
+  productId: number;
+
   @ManyToOne(() => Color, {
-    nullable: false,
+    nullable: true,
     createForeignKeyConstraints: false,
   })
   @JoinColumn({ name: 'color_id' })
   color: Color;
+
+  @Column({ nullable: true, name: 'color_id' })
+  colorId: number;
 }

@@ -19,21 +19,21 @@ export class OrderItem extends BaseEntity {
   @JoinColumn({ name: 'order_id' })
   order: Order;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, name: 'order_id' })
   orderId: number;
 
   @ManyToOne(() => ProductVariant, { nullable: false })
   @JoinColumn({ name: 'variant_id' })
   variant: ProductVariant;
 
-  @Column()
+  @Column({ nullable: false, name: 'variant_id' })
   variantId: number;
 
   @ManyToOne(() => Product, { nullable: false })
   @JoinColumn({ name: 'product_id' })
   product: Product;
 
-  @Column()
+  @Column({ nullable: false, name: 'product_id' })
   productId: number;
 
   @Column({ nullable: false })
