@@ -16,18 +16,42 @@ import { ConfigService } from '@nestjs/config';
 export class S3ClientService {
   private logger = new Logger('S3ClientService');
   private client: S3Client;
-  private bucketName = 'fstore-nbphuoc';
-  private s3_region = 'ap-southeast-1';
+  private bucketName: string;
+  private s3_region: string;
+  private s3_endpoint: string;
+  private accessKeyId: string;
+  private secretAccessKey: string;
   constructor(private readonly configService: ConfigService) {
-    this.client = new S3Client({
-      forcePathStyle: true,
-      region: this.s3_region,
-      endpoint: 'https://izxsashwvdqobraupqxx.supabase.co/storage/v1/s3',
-      credentials: {
-        accessKeyId: this.configService.get('SUPABASE_S3_ACCESS_KEY'),
-        secretAccessKey: this.configService.get('SUPABASE_S3_SECRET_KEY'),
-      },
-    });
+    this.logger.log('S3ClientService initialized');
+
+    if (this.configService.get<boolean>('AWS_S3')) {
+      this.logger.log('Using AWS S3');
+      this.bucketName = this.configService.getOrThrow('AWS_S3_BUCKET');
+      this.s3_region = this.configService.getOrThrow('AWS_S3_REGION');
+      this.s3_endpoint = this.configService.getOrThrow('AWS_S3_ENDPOINT');
+      this.client = new S3Client({
+        region: this.s3_region,
+        credentials: {
+          accessKeyId: this.configService.getOrThrow('AWS_S3_ACCESS_KEY'),
+          secretAccessKey: this.configService.getOrThrow('AWS_S3_SECRET_KEY'),
+        },
+      });
+    } else {
+      this.logger.log('Using Supabase S3');
+      this.s3_region = this.configService.getOrThrow('SUPABASE_S3_REGION');
+      this.s3_endpoint = this.configService.getOrThrow('SUPABASE_S3_ENDPOINT');
+      this.client = new S3Client({
+        forcePathStyle: true,
+        region: this.s3_region,
+        endpoint: this.s3_endpoint,
+        credentials: {
+          accessKeyId: this.configService.getOrThrow('SUPABASE_S3_ACCESS_KEY'),
+          secretAccessKey: this.configService.getOrThrow(
+            'SUPABASE_S3_SECRET_KEY',
+          ),
+        },
+      });
+    }
   }
 
   // get presigned url for uploading file from client
@@ -52,23 +76,17 @@ export class S3ClientService {
   // upload file form server
   uploadFileToPublicBucket(code: string, file: Express.Multer.File): string {
     try {
-      const bucket_name = this.bucketName;
-      const key = `products/${code}`;
       this.client.send(
         new PutObjectCommand({
-          Bucket: bucket_name,
-          Key: key,
+          Bucket: this.bucketName,
+          Key: `products/${code}`,
           Body: file.buffer,
           ContentType: file.mimetype,
           ACL: 'public-read',
           ContentLength: file.size, // calculate length of buffer
         }),
       );
-      // return `https://${bucket_name}.s3.ap-southeast-1.amazonaws.com/${key}`;
-      return (
-        'https://izxsashwvdqobraupqxx.supabase.co/storage/v1/object/public/fstore-nbphuoc/products/' +
-        code
-      );
+      return `${this.s3_endpoint}/products/` + code;
     } catch (error) {
       throw new InternalServerErrorException(error);
     }

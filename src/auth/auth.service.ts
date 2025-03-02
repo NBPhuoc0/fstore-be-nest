@@ -14,31 +14,37 @@ export class AuthService {
       process.env.SUPABASE_KEY,
     );
   }
-
-  async signInUser(dto: SignInDto): Promise<{ data: any; error: any }> {
+  // đăng nhập với pass
+  async signInUser(dto: SignInDto): Promise<{ data: any }> {
     const { data, error } = await this.supabaseClient.auth.signInWithPassword({
       email: dto.email,
       password: dto.password,
     });
+    if (error) {
+      throw new HttpException(error.message, HttpStatus.UNAUTHORIZED);
+    }
 
     return {
       data: data.session,
-      error: error,
     };
   }
 
+  // đăng nhập với gg
   async signInGG() {
     const { data, error } = await this.supabaseClient.auth.signInWithOAuth({
       provider: 'google',
     });
+    if (error) {
+      throw new HttpException(error.message, HttpStatus.UNAUTHORIZED);
+    }
 
     return {
       data: data,
-      error: error,
     };
   }
 
-  async signupUser(dto: CreateUserDto): Promise<{ data: any; error: any }> {
+  // đăng ký mới với pass
+  async signupUser(dto: CreateUserDto): Promise<{ data: any }> {
     const { data, error } = await this.supabaseClient.auth.signUp({
       email: dto.email,
       password: dto.password,
@@ -47,29 +53,45 @@ export class AuthService {
           fullName: dto.fullName,
           address: dto.address,
           phoneNumber: dto.phone,
+          isAdmin: false,
         },
       },
     });
+    if (error) {
+      throw new HttpException(error.message, HttpStatus.CONFLICT);
+    }
     try {
+      dto.provider = 'email';
       await this.userService.createUser(data.user.id, dto);
     } catch (error) {
-      this.supabaseClient.auth.admin.deleteUser(data.user.id);
+      // this.supabaseClient.auth.admin.deleteUser(data.user.id);
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
     return {
-      data: data,
-      error: { ...error, message: error?.message },
+      data: data.session,
     };
   }
 
+  // thêm thông tin user vào db sau khi đăng nhập bằng gg
   async createUserData(id: string, data: CreateUserDto) {
     return await this.userService.createUser(id, data);
   }
 
+  // lấy thông tin user theo id
   async findUserById(id: string) {
     return await this.userService.getUserById(id);
   }
 
+  // check admin user
+  async checkAdminUser(id: string) {
+    const res = await this.userService.getUserById(id);
+    if (res.isAdmin) {
+      return res;
+    }
+    return null;
+  }
+
+  // đăng xuất
   async signOutUser() {
     const { error } = await this.supabaseClient.auth.signOut();
     return {

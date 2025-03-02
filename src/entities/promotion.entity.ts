@@ -12,7 +12,7 @@ import { Product } from './product.entity';
 import { PromotionType } from 'src/common/enums';
 
 @Entity('promotions')
-@Index('idx_promotions_code', ['urlHandle'], { unique: true })
+@Index('idx_promotions_code', ['urlHandle'], { unique: true }) // Unique index cho code
 export class Promotion extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;

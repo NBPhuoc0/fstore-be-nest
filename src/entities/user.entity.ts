@@ -1,17 +1,20 @@
-import { Exclude } from 'class-transformer';
 import {
   BaseEntity,
   Column,
+  CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   OneToMany,
   OneToOne,
   PrimaryColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Cart } from './cart.entity';
 import { Order } from './order.entity';
 
 @Entity({ name: 'users' })
+@Index('uq_users_email', ['email'], { unique: true }) // Unique index cho email
 export class User extends BaseEntity {
   @PrimaryColumn()
   id: string;
@@ -36,11 +39,6 @@ export class User extends BaseEntity {
   @Column({
     nullable: true,
   })
-  avatar: string;
-
-  @Column({
-    nullable: true,
-  })
   provider: string;
 
   @OneToOne(() => Cart, (cart) => cart.user, { cascade: true })
@@ -49,4 +47,7 @@ export class User extends BaseEntity {
 
   @OneToMany(() => Order, (order) => order.user)
   orders: Order[];
+
+  @Column({ default: false, name: 'is_admin' })
+  isAdmin: boolean;
 }

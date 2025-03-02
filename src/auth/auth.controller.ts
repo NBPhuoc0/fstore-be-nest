@@ -14,6 +14,8 @@ import { CreateUserDto } from 'src/dto/req/create-user.dto';
 import { SupabaseAuthGuard } from './guards/supabase.auth.guard';
 import { SignInDto } from 'src/dto/req/sign-in.dto';
 import { Request } from 'express';
+import { RequestWithUser } from 'src/common/types';
+import { AdminAuthGuard } from './guards/admin.auth.guard';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -21,7 +23,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Get('test')
-  @UseGuards(SupabaseAuthGuard)
+  @UseGuards(AdminAuthGuard)
   @ApiBearerAuth('access-token')
   async test(@Req() req) {
     let x = 1;
@@ -63,7 +65,7 @@ export class AuthController {
     summary: 'Signs in the user with OAuth',
     description: 'This endpoint signs in the user with OAuth.',
   })
-  async signInOAuth(@Req() req) {
+  async getProfile(@Req() req: RequestWithUser) {
     const user = req.user;
     let res = await this.authService.findUserById(user.id);
 
@@ -71,6 +73,7 @@ export class AuthController {
       return res;
     }
 
+    // nếu user chưa có trong db thì tạo mới (chỉ dành cho đăng nhập gg)
     if (user.app_metadata.provider == 'google') {
       const dto = new CreateUserDto();
       dto.email = user.email;

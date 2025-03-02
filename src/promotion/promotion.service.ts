@@ -12,33 +12,40 @@ export class PromotionService {
   constructor() {}
 
   //**Products Promotion */
+  // lấy tất cả khuyến mãi
   async getPromotions() {
     return Promotion.find();
   }
 
+  // lấy thông tin khuyến mãi theo id
   async getPromotionById(id: number) {
     return Promotion.findOneBy({ id });
   }
 
+  // tạo mới khuyến mãi
   async createPromotion(dto: CreatePromotionDto) {
     const promotion = Promotion.create({ ...dto });
     promotion.urlHandle = slugify(dto.name, { lower: true });
     return Promotion.save(promotion);
   }
 
+  // thêm sản phẩm vào khuyến mãi
   async addProductToPromotion(promotionId: number, productIds: number[]) {
     return await Product.update({ id: In(productIds) }, { promotionId });
   }
 
+  // xóa sản phẩm khỏi khuyến mãi
   async removeProductFromPromotion(promotionId: number, productIds: number[]) {
     return await Product.update({ id: In(productIds) }, { promotionId: null });
   }
 
+  // tắt khuyến mãi
   async disablePromotion(promotionId: number) {
     await Promotion.update({ id: promotionId }, { status: false });
     return Product.update({ promotionId }, { promotionId: null });
   }
 
+  // bật khuyến mãi
   async enablePromotion(promotionId: number) {
     const promo = await Promotion.findOne({
       where: { id: promotionId },
@@ -52,36 +59,42 @@ export class PromotionService {
     return;
   }
 
+  // xóa khuyến mãi
   async removePromotion(promotionId: number) {
     return Promotion.delete({ id: promotionId });
   }
 
   //**Voucher */
-
+  // lấy tất cả voucher
   async getVouchers() {
     return Voucher.find();
   }
 
+  // lấy thông tin voucher theo id
   async getVoucherById(id: number) {
     return Voucher.findOneBy({ id });
   }
 
+  // tạo mới voucher
   async createVoucher(dto: CreateVoucherDto) {
     const voucher = Voucher.create({ ...dto });
     voucher.code = slugify(dto.name, { lower: true });
     return Voucher.save(voucher);
   }
 
+  // xoá voucher
   async removeVoucher(voucherId: number) {
     return Voucher.delete({
       id: voucherId,
     });
   }
 
+  // tắt voucher
   async disableVoucher(voucherId: number) {
     return Voucher.update({ id: voucherId }, { status: false });
   }
 
+  // bật voucher
   async enableVoucher(voucherId: number) {
     return Voucher.update({ id: voucherId }, { status: true });
   }

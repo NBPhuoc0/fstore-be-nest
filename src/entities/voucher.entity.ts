@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 
 @Entity('vouchers')
-@Index('idx_vouchers_code', ['code'], { unique: true })
+@Index('idx_vouchers_code', ['code'], { unique: true }) // Unique index cho code
 export class Voucher extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;

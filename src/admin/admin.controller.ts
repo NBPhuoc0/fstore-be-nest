@@ -19,6 +19,7 @@ import { CreateProdDto } from 'src/dto/req/create-prod.dto';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { createCateDto } from 'src/dto/req/create-cate.dto';
 import { createColorDto } from 'src/dto/req/create-color.dto';
+import { S3ClientService } from 'src/common/services/s3-client.service';
 
 @Controller('admin')
 export class AdminController {
@@ -26,9 +27,11 @@ export class AdminController {
     private readonly adminService: AdminService,
     private readonly productService: ProductService,
     private readonly productUtilService: ProductUtilsService,
+    private readonly s3ClientService: S3ClientService,
   ) {}
 
   private logger = new Logger('AdminController');
+  //*test
 
   //* Brand
 

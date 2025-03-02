@@ -39,14 +39,82 @@ export class ProductService {
   }
   private logger = new Logger('ProductService');
 
+  // lấy tất cả sản phẩm
   async getProducts() {
     return Product.find();
   }
 
+  // lấy sản phẩm theo bộ lọc
+  async getProductsWithFilter(
+    page = 0,
+    limit = 10,
+    category?: string,
+    brand?: string,
+    color?: string,
+    size?: string,
+    orderBy: string = 'created_at', ///  price
+    orderType: 'ASC' | 'DESC' = 'DESC',
+  ) {
+    const validOrderFields = ['name', 'price', 'created_at'];
+    if (!validOrderFields.includes(orderBy)) {
+      throw new BadRequestException(
+        `Invalid orderBy field. Must be one of: ${validOrderFields.join(', ')}`,
+      );
+    }
+
+    if (orderBy === 'price') {
+      orderBy = 'original_price';
+    }
+
+    const query = this.dataSource
+      .createQueryBuilder(Product, 'product')
+      .leftJoinAndSelect('product.category', 'category')
+      .leftJoinAndSelect('product.brand', 'brand')
+      .leftJoinAndSelect('product.variants', 'variants')
+      .leftJoinAndSelect('variants.color', 'color')
+      .leftJoinAndSelect('variants.size', 'size')
+      .orderBy('product.' + orderBy, orderType) // Sắp xếp sản phẩm mới nhất
+      .skip(page * limit)
+      .take(limit);
+
+    // Lọc theo category
+    if (category) {
+      query.andWhere('category.name = :category', { category });
+    }
+
+    // Lọc theo brand
+    if (brand) {
+      query.andWhere('brand.name = :brand', { brand });
+    }
+
+    // Lọc theo color (màu sắc từ ProductVariant)
+    if (color) {
+      query.andWhere('color.name = :color', { color });
+    }
+
+    // Lọc theo size (kích thước từ ProductVariant)
+    if (size) {
+      query.andWhere('size.name = :size', { size });
+    }
+
+    // Lấy kết quả và tổng số sản phẩm
+    const [data, total] = await query.getManyAndCount();
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  // lấy sản phẩm theo id
   async getProductById(id: number) {
     return Product.findBy({ id });
   }
 
+  // tạo mới sản phẩm
   async createProduct(dto: CreateProdDto) {
     const product = Product.create();
 
@@ -108,6 +176,7 @@ export class ProductService {
     });
   }
 
+  // thêm ảnh cho sản phẩm
   async updateProductVariantPhoto(
     prodId: number,
     colorId: number,
@@ -130,10 +199,12 @@ export class ProductService {
     return await product.save();
   }
 
+  // cập nhật thông tin sản phẩm
   async updateProductInfo(id: number, data: UpdateProdDto) {
     // return Product.update(id, data);
   }
 
+  // xóa sản phẩm
   async deleteProduct(id: number) {
     return Product.delete(id);
   }

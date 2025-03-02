@@ -15,11 +15,10 @@ export class Cart extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @OneToOne(() => User, (user) => user.cart)
-  @JoinColumn({ name: 'user_id' })
+  @OneToOne(() => User, (user) => user.cart, { onDelete: 'CASCADE' })
   user: User;
 
-  @Column({ name: 'user_id' })
+  @Column({ name: 'user_id', nullable: true })
   userId: number;
 
   @OneToMany(() => CartItem, (cartItem) => cartItem.cart)

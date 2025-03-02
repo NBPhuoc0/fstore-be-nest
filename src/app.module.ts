@@ -60,16 +60,17 @@ import { AdminModule } from './admin/admin.module';
       autoLoadEntities: true,
       // dropSchema: true, //!!
       synchronize: true,
-      cache: {
-        type: 'redis',
-        options: {
-          socket: {
-            host: process.env.REDIS_HOST,
-            port: parseInt(process.env.REDIS_PORT),
-          },
-        },
-        duration: 86400000,
-      },
+      // cache: true,
+      // cache: {
+      //   type: 'redis',
+      //   options: {
+      //     url: {
+      //       host: process.env.REDIS_URL,
+      //       legacyMode: true,
+      //     },
+      //   },
+      //   duration: 86400000,
+      // },
     }),
     AuthModule,
     UserModule,

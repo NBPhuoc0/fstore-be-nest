@@ -1,3 +1,6 @@
+import { User } from '@supabase/supabase-js';
+import { Request } from 'express';
+
 export type CheckoutRequestType = {
   orderCode: number; // Mã đơn hàng
   amount: number; // Số tiền của đơn hàng
@@ -75,3 +78,4 @@ export type WebhookDataType = {
   virtualAccountName?: string | null; // Tên chủ tài khoản ảo
   virtualAccountNumber?: string | null; // Số tài khoản ảo
 };
+export type RequestWithUser = Request & { user: User };
