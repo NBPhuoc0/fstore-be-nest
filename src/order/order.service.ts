@@ -2,7 +2,14 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { OrderStatus, VoucherType } from 'src/common/enums';
 import { CreateOrderDto } from 'src/dto/req/create-order.dto';
-import { Cart, CartItem, Order, OrderItem, Voucher } from 'src/entities';
+import {
+  Cart,
+  CartItem,
+  Order,
+  OrderItem,
+  Product,
+  Voucher,
+} from 'src/entities';
 import { ProductService } from 'src/product/services/product.service';
 import { DataSource, Repository } from 'typeorm';
 
@@ -97,6 +104,15 @@ export class OrderService {
     // Save order and update voucher used quantity
     return this.dataSource.transaction(async (manager) => {
       await manager.increment(Voucher, { id: voucher.id }, 'usedQuantity', 1);
+      await manager.delete(Cart, { id: cart.id });
+      for (const prod of orderItems) {
+        await manager.increment(
+          Product,
+          { id: prod.productId },
+          'sale_count',
+          prod.quantity,
+        );
+      }
       return await manager.save(order);
     });
   }
@@ -105,21 +121,21 @@ export class OrderService {
     await Order.update({ id }, { status });
   }
 
-  async getOrderById(id: number) {
+  async getOrderById(id: number): Promise<Order> {
     return Order.findOne({
       where: { id },
       relations: ['orderItems'],
     });
   }
 
-  async getOrdersByUserId(userId: number) {
+  async getOrdersByUserId(userId: number): Promise<Order[]> {
     return Order.find({
       where: { userId },
       relations: ['orderItems'],
     });
   }
 
-  async getOrders() {
+  async getOrders(): Promise<Order[]> {
     return Order.find({
       relations: ['orderItems'],
     });

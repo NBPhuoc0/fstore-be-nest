@@ -1,6 +1,10 @@
-import { Controller, Get, Logger, Param } from '@nestjs/common';
+import { Controller, Get, Logger, Param, Query } from '@nestjs/common';
 import { ProductService } from './services/product.service';
 import { CacheService } from 'src/common/services/cache.service';
+import { json } from 'express';
+import { PaginatedResponse } from 'src/dto/res/paginated-response.dto';
+import { Product } from 'src/entities';
+import { CachePatterns } from 'src/common/enums';
 
 @Controller('product')
 export class ProductController {
@@ -12,21 +16,54 @@ export class ProductController {
 
   // get all products
   @Get()
-  async findAllProducts() {
-    return this.productService.getProducts();
+  async findAllProducts(
+    @Query('page') page: number,
+    @Query('limit') limit: number,
+    @Query('category') category?: string,
+    @Query('brand') brand?: string,
+    @Query('color') color?: string,
+    @Query('size') size?: string,
+    @Query('orderType') orderType?: number,
+  ): Promise<PaginatedResponse<Product>> {
+    return this.productService.getProductsWithFilter(
+      page,
+      limit,
+      category,
+      brand,
+      color,
+      size,
+      orderType,
+    );
+  }
+
+  @Get('test')
+  async test(@Param('id') id: string) {
+    return await this.cacheService.iterator(CachePatterns.ProductViewDaily);
   }
 
   @Get('/:id')
-  async findOneProduct(@Param('id') id: string) {
-    this.cacheService.set('product-get', id);
-    const cachedProduct = await this.cacheService.get('product/' + id);
+  async findOneProduct(@Param('id') id: number) {
+    await this.cacheService.set(
+      'product-get',
+      id,
+      CachePatterns.ProductViewDaily,
+    );
+    const cachedProduct = await this.cacheService.get(
+      'product/' + id,
+      CachePatterns.Product,
+    );
     if (cachedProduct) {
       this.logger.log('Product found in cache');
-      return cachedProduct;
+      return JSON.parse(cachedProduct);
     }
     this.logger.log('Product not found in cache');
     const prod = await this.productService.getProductById(+id);
-    this.cacheService.set('product/' + id, prod);
+    this.cacheService.set(
+      'product/' + id,
+      JSON.stringify(prod),
+      CachePatterns.Product,
+      86400,
+    );
     return prod;
   }
 }

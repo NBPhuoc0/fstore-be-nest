@@ -20,3 +20,10 @@ export enum PromotionType {
   AMOUNT = 'AMOUNT',
   FLAT = 'FLAT',
 }
+
+export enum CachePatterns {
+  ProductViewDaily = 'product_view_daily',
+  ProductViewWeekly = 'product_view_weekly',
+  ProductViewMonthly = 'product_view_monthly',
+  Product = 'product',
+}

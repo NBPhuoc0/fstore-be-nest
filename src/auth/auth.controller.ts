@@ -16,51 +16,76 @@ import { SignInDto } from 'src/dto/req/sign-in.dto';
 import { Request } from 'express';
 import { RequestWithUser } from 'src/common/types';
 import { AdminAuthGuard } from './guards/admin.auth.guard';
+import { UserTokenResponse } from 'src/dto/res/user-token-response.dto';
+import { plainToInstance } from 'class-transformer';
+import { ApiResponse } from 'src/dto/res/api-response.dto';
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Get('test')
-  @UseGuards(AdminAuthGuard)
-  @ApiBearerAuth('access-token')
-  async test(@Req() req) {
-    let x = 1;
-    return req.user;
-  }
+  // //!! test upgrade user
+  // @Get('test')
+  // @UseGuards(SupabaseAuthGuard)
+  // @ApiBearerAuth('Authorization')
+  // async test(@Req() req: RequestWithUser) {
+  //   return this.authService.upgradeUser(req.headers.authorization);
+  // }
 
-  @Post('signIn')
+  @Post('login')
   @ApiOperation({
     summary: 'Acquires an access token',
     description: 'This endpoint will provide an access token.',
   })
-  async signIn(@Body() dto: SignInDto) {
-    return this.authService.signInUser(dto);
+  async signIn(
+    @Body() dto: SignInDto,
+  ): Promise<ApiResponse<UserTokenResponse>> {
+    // return this.authService.signInUser(dto);
+    const data = await this.authService.signInUser(dto);
+
+    return new ApiResponse<UserTokenResponse>(
+      200,
+      'Sign in with Google successfully',
+      plainToInstance(UserTokenResponse, data, {
+        excludeExtraneousValues: true,
+        enableImplicitConversion: true,
+      }),
+    );
   }
 
-  @Post('signIn/google')
+  @Post('login/google')
   @ApiOperation({
     summary: 'Signs in the user with Google',
     description: 'This endpoint signs in the user with Google.',
   })
   async signInGG() {
-    return this.authService.signInGG();
+    return await this.authService.signInGG();
   }
 
-  @Post('signUp')
+  @Post('signup')
   @ApiOperation({
     summary: 'Signs up the user in the system',
     description:
       'This endpoint signs up the user in the system. It will return the user details. You will use this user to interact with the rest of the endpoints.',
   })
   async signUp(@Body() dto: CreateUserDto) {
-    return this.authService.signupUser(dto);
+    // return this.authService.signupUser(dto);
+    const data = await this.authService.signupUser(dto);
+
+    return new ApiResponse<UserTokenResponse>(
+      201,
+      'Sign up successfully',
+      plainToInstance(UserTokenResponse, data, {
+        excludeExtraneousValues: true,
+        enableImplicitConversion: true,
+      }),
+    );
   }
 
   @Get('profile')
   @UseGuards(SupabaseAuthGuard)
-  @ApiBearerAuth('access-token')
+  @ApiBearerAuth('Authorization')
   @ApiOperation({
     summary: 'Signs in the user with OAuth',
     description: 'This endpoint signs in the user with OAuth.',
@@ -87,4 +112,23 @@ export class AuthController {
 
     throw new UnauthorizedException('User not found');
   }
+
+  @Post('refresh')
+  @ApiOperation({
+    summary: 'Refreshes the access token',
+    description: 'This endpoint refreshes the access token.',
+  })
+  async refreshToken(@Body() data: { token: string }) {
+    return this.authService.refreshToken(data.token);
+  }
+
+  // @Get('signout')
+  // @ApiOperation({
+  //   summary: 'Signs out the user',
+  //   description: 'This endpoint signs out the user.',
+  // })
+  // @UseGuards(SupabaseAuthGuard)
+  // async signOut(@Req() req: RequestWithUser) {
+  //   return this.authService.signOutUser(req.user);
+  // }
 }

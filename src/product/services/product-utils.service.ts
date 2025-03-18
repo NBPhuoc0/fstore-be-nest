@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { createBrandDto } from 'src/dto/req/create-brand.dto';
 import { createCateDto } from 'src/dto/req/create-cate.dto';
@@ -6,7 +6,7 @@ import { createColorDto } from 'src/dto/req/create-color.dto';
 import { createSizeDto } from 'src/dto/req/create-size.dto';
 import { Brand, Category, Color, Size } from 'src/entities';
 import { Photo } from 'src/entities/photo.entity';
-import { Repository } from 'typeorm';
+import { Repository, TypeORMError } from 'typeorm';
 
 @Injectable()
 export class ProductUtilsService {

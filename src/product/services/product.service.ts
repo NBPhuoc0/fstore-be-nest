@@ -12,6 +12,7 @@ import { createColorDto } from 'src/dto/req/create-color.dto';
 import { CreateProdDto } from 'src/dto/req/create-prod.dto';
 import { createSizeDto } from 'src/dto/req/create-size.dto';
 import { UpdateProdDto } from 'src/dto/req/update-prod.dto';
+import { PaginatedResponse } from 'src/dto/res/paginated-response.dto';
 import {
   Brand,
   Category,
@@ -40,7 +41,7 @@ export class ProductService {
   private logger = new Logger('ProductService');
 
   // lấy tất cả sản phẩm
-  async getProducts() {
+  async getProducts(): Promise<Product[]> {
     return Product.find();
   }
 
@@ -52,20 +53,21 @@ export class ProductService {
     brand?: string,
     color?: string,
     size?: string,
-    orderBy: string = 'created_at', ///  price
-    orderType: 'ASC' | 'DESC' = 'DESC',
-  ) {
-    const validOrderFields = ['name', 'price', 'created_at'];
-    if (!validOrderFields.includes(orderBy)) {
-      throw new BadRequestException(
-        `Invalid orderBy field. Must be one of: ${validOrderFields.join(', ')}`,
-      );
+    orderType?: number, // 1: price ASC, 2: price DESC, 3: newest, 4: oldest
+  ): Promise<PaginatedResponse<Product>> {
+    if (!orderType || orderType < 1 || orderType > 4) {
+      orderType = 3;
     }
-
-    if (orderBy === 'price') {
-      orderBy = 'original_price';
-    }
-
+    const orderOptions: Record<
+      number,
+      { sort: string; order: 'ASC' | 'DESC' }
+    > = {
+      1: { sort: 'original_price', order: 'ASC' }, // Giá tăng dần
+      2: { sort: 'original_price', order: 'DESC' }, // Giá giảm dần
+      3: { sort: 'created_at', order: 'DESC' }, // Mới nhất
+      4: { sort: 'created_at', order: 'ASC' }, // Cũ nhất
+    };
+    const { sort, order } = orderOptions[orderType];
     const query = this.dataSource
       .createQueryBuilder(Product, 'product')
       .leftJoinAndSelect('product.category', 'category')
@@ -73,7 +75,7 @@ export class ProductService {
       .leftJoinAndSelect('product.variants', 'variants')
       .leftJoinAndSelect('variants.color', 'color')
       .leftJoinAndSelect('variants.size', 'size')
-      .orderBy('product.' + orderBy, orderType) // Sắp xếp sản phẩm mới nhất
+      .orderBy(sort, order) //
       .skip(page * limit)
       .take(limit);
 
@@ -102,20 +104,20 @@ export class ProductService {
 
     return {
       data,
-      total,
       page,
       limit,
+      total,
       totalPages: Math.ceil(total / limit),
     };
   }
 
   // lấy sản phẩm theo id
-  async getProductById(id: number) {
-    return Product.findBy({ id });
+  async getProductById(id: number): Promise<Product> {
+    return Product.findOneBy({ id });
   }
 
   // tạo mới sản phẩm
-  async createProduct(dto: CreateProdDto) {
+  async createProduct(dto: CreateProdDto): Promise<Product> {
     const product = Product.create();
 
     product.name = dto.name;
@@ -124,11 +126,11 @@ export class ProductService {
 
     // await product.save();
     const colors = await Color.findBy({
-      id: In(dto.colors),
+      id: In(dto.colorIds),
     });
 
     const sizes = await Size.findBy({
-      id: In(dto.sizes),
+      id: In(dto.sizeIds),
     });
 
     //* Color relation
@@ -144,11 +146,12 @@ export class ProductService {
     }
 
     //* Brand relation
-    product.brandId = dto.brand;
+    product.brandId = dto.brandId;
 
     //* Category relation
-    product.categoryId = dto.category;
+    product.categoryId = dto.categoryId;
 
+    //* transaction to save product and product variants
     return await this.dataSource.manager.transaction(async (manager) => {
       await manager.save(product); // get product id
 
@@ -181,7 +184,7 @@ export class ProductService {
     prodId: number,
     colorId: number,
     files: Express.Multer.File[],
-  ) {
+  ): Promise<Product> {
     await Color.findOneByOrFail({ id: colorId });
     const product = await Product.findOneByOrFail({ id: prodId });
 
@@ -200,12 +203,12 @@ export class ProductService {
   }
 
   // cập nhật thông tin sản phẩm
-  async updateProductInfo(id: number, data: UpdateProdDto) {
-    // return Product.update(id, data);
+  async updateProductInfo(id: number, data: UpdateProdDto): Promise<string> {
+    return (await Product.update(id, data)).raw;
   }
 
   // xóa sản phẩm
-  async deleteProduct(id: number) {
-    return Product.delete(id);
+  async deleteProduct(id: number): Promise<string> {
+    return (await Product.delete(id)).raw;
   }
 }

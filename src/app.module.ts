@@ -1,7 +1,7 @@
 import { INestApplication, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import AppService from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import {
@@ -26,6 +26,7 @@ import { ProductModule } from './product/product.module';
 import { CommonModule } from './common/common.module';
 import { PromotionModule } from './promotion/promotion.module';
 import { AdminModule } from './admin/admin.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -72,6 +73,7 @@ import { AdminModule } from './admin/admin.module';
       //   duration: 86400000,
       // },
     }),
+    ScheduleModule.forRoot(),
     AuthModule,
     UserModule,
     OrderModule,

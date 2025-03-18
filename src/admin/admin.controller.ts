@@ -10,17 +10,23 @@ import {
   UploadedFiles,
   UploadedFile,
   Logger,
+  UseGuards,
+  Req,
+  HttpException,
 } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { ProductService } from 'src/product/services/product.service';
 import { ProductUtilsService } from 'src/product/services/product-utils.service';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CreateProdDto } from 'src/dto/req/create-prod.dto';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { createCateDto } from 'src/dto/req/create-cate.dto';
 import { createColorDto } from 'src/dto/req/create-color.dto';
 import { S3ClientService } from 'src/common/services/s3-client.service';
+import { AdminAuthGuard } from 'src/auth/guards/admin.auth.guard';
 
+@ApiBearerAuth('Authorization')
+// @UseGuards(AdminAuthGuard)
 @Controller('admin')
 export class AdminController {
   constructor(
@@ -31,7 +37,12 @@ export class AdminController {
   ) {}
 
   private logger = new Logger('AdminController');
-  //*test
+  //* test auth
+  @Get('test')
+  @ApiBearerAuth('Authorization')
+  async test(@Req() req) {
+    return req.user;
+  }
 
   //* Brand
 
@@ -88,9 +99,11 @@ export class AdminController {
 
   // create category
   @ApiTags('Category')
+  // @UseGuards(AdminAuthGuard)
   @Post('categories')
   createCategory(@Body() createCategoryDto: any) {
     return this.productUtilService.createCategory(createCategoryDto);
+    // throw new HttpException('Not implemented', 500);
   }
 
   // update category by id
@@ -126,7 +139,7 @@ export class AdminController {
   // create color
   @ApiTags('Color')
   @Post('colors')
-  createColor(@Body() createColorDto: createColorDto) {
+  createColor(@Body() createColorDto: any) {
     return this.productUtilService.createColor(createColorDto);
   }
 
@@ -162,6 +175,7 @@ export class AdminController {
 
   // create size
   @ApiTags('Size')
+  @UseGuards(AdminAuthGuard)
   @Post('sizes')
   createSize(@Body() createSizeDto: any) {
     return this.productUtilService.createSize(createSizeDto);
@@ -193,7 +207,7 @@ export class AdminController {
   // get product by id
   @ApiTags('Product')
   @Get('products/:id')
-  findOneProduct(@Param('id') id: string) {
+  findOneProduct(@Param('id') id: number) {
     return this.productService.getProductById(+id);
   }
 

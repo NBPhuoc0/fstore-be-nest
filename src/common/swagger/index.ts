@@ -24,7 +24,7 @@ export function setupSwagger(app: INestApplication): void {
     .setVersion(SWAGGER_API_CURRENT_VERSION)
     .addBearerAuth(
       { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
-      'access-token',
+      'Authorization',
     )
     .setExternalDoc('Postman Collection', '/docs-json')
 

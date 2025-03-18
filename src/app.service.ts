@@ -1,8 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { CacheService } from './common/services/cache.service';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
-export class AppService {
-  getHello(): string {
-    return 'Hello World!';
+export default class AppService {
+  private readonly logger = new Logger('AppService');
+  constructor(private readonly cacheService: CacheService) {}
+
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  handleDailyUpdateProductsView() {
+    this.logger.log('Daily update products view');
+    // logic here
   }
 }

@@ -1,6 +1,7 @@
 import { ArgumentsHost, Catch, ExceptionFilter } from '@nestjs/common';
 import { TypeORMError } from 'typeorm';
-import { Response } from 'express';
+import e, { Response } from 'express';
+import { ErrorResponseDto } from 'src/dto/res/error-response.dto';
 
 @Catch(TypeORMError)
 export class TypeORMExceptionFilter implements ExceptionFilter {
@@ -9,9 +10,12 @@ export class TypeORMExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const status = 500;
 
-    response.status(status).json({
-      error: true,
-      msg: exception.name + ': ' + exception.message,
-    });
+    const error = new ErrorResponseDto(
+      status,
+      exception.message,
+      exception.name,
+    );
+
+    response.status(status).json(error);
   }
 }

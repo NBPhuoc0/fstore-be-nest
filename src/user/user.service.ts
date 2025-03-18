@@ -40,6 +40,11 @@ export class UserService {
     return this.getUserById(id);
   }
 
+  async upgrateUserToAdmin(id: string): Promise<User> {
+    await User.update(id, { isAdmin: true });
+    return this.getUserById(id);
+  }
+
   async getCart(userId: string): Promise<Cart> {
     const user = await this.getUserById(userId);
     return user.cart;

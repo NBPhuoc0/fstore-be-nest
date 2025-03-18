@@ -28,26 +28,26 @@ export class CreateProdDto {
     description: 'The category id of the product',
   })
   @IsNotEmpty()
-  category: number;
+  categoryId: number;
 
   @ApiProperty({
     example: 1,
     description: 'The brand id of the product',
   })
   @IsNotEmpty()
-  brand: number;
+  brandId: number;
 
   @ApiProperty({
     example: [1, 2, 3, 4],
     description: 'The list color of the product',
   })
   @IsNotEmpty()
-  colors: number[];
+  colorIds: number[];
 
   @ApiProperty({
     example: [1, 2, 3, 4],
     description: 'The list size of the product',
   })
   @IsNotEmpty()
-  sizes: number[];
+  sizeIds: number[];
 }

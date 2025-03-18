@@ -118,4 +118,10 @@ export class Product extends BaseEntity {
     eager: true,
   })
   photos: Photo[];
+
+  @Column({ default: 0, name: 'view_count' })
+  viewCount: number;
+
+  @Column({ default: 0, name: 'sale_count' })
+  saleCount: number;
 }

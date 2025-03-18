@@ -1,8 +1,17 @@
-import { Controller, Delete, Get, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { OrderService } from './order.service';
 import { PaymentService } from './payment.service';
+import { SupabaseAuthGuard } from 'src/auth/guards/supabase.auth.guard';
 
 @Controller('order')
+@UseGuards(SupabaseAuthGuard)
 export class OrderController {
   constructor(
     private readonly orderService: OrderService,
