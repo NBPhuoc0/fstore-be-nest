@@ -101,7 +101,7 @@ export class AdminController {
   @ApiTags('Category')
   // @UseGuards(AdminAuthGuard)
   @Post('categories')
-  createCategory(@Body() createCategoryDto: any) {
+  createCategory(@Body() createCategoryDto: createCateDto) {
     return this.productUtilService.createCategory(createCategoryDto);
     // throw new HttpException('Not implemented', 500);
   }
@@ -175,7 +175,7 @@ export class AdminController {
 
   // create size
   @ApiTags('Size')
-  @UseGuards(AdminAuthGuard)
+  // @UseGuards(AdminAuthGuard)
   @Post('sizes')
   createSize(@Body() createSizeDto: any) {
     return this.productUtilService.createSize(createSizeDto);

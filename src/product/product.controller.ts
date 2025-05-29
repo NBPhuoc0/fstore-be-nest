@@ -5,6 +5,7 @@ import { json } from 'express';
 import { PaginatedResponse } from 'src/dto/res/paginated-response.dto';
 import { Product } from 'src/entities';
 import { CachePatterns } from 'src/common/enums';
+import { ProductUtilsService } from './services/product-utils.service';
 
 @Controller('product')
 export class ProductController {
@@ -12,13 +13,14 @@ export class ProductController {
   constructor(
     private readonly productService: ProductService,
     private readonly cacheService: CacheService,
+    private readonly productUtilsService: ProductUtilsService, // Assuming this is the correct service for product utils
   ) {}
 
   // get all products
   @Get()
   async findAllProducts(
-    @Query('page') page: number,
-    @Query('limit') limit: number,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
     @Query('category') category?: string,
     @Query('brand') brand?: string,
     @Query('color') color?: string,
@@ -36,9 +38,9 @@ export class ProductController {
     );
   }
 
-  @Get('test')
-  async test(@Param('id') id: string) {
-    return await this.cacheService.iterator(CachePatterns.ProductViewDaily);
+  @Get('test/:id')
+  async test(@Param('id') id: number) {
+    return await this.productUtilsService.getChildrenCategoriesArr(id);
   }
 
   @Get('/:id')

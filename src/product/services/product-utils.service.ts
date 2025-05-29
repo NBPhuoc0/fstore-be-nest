@@ -41,7 +41,20 @@ export class ProductUtilsService {
   }
 
   async getCategoryById(id: number) {
-    return Category.findOne({ where: { id } });
+    return Category.findOne({
+      where: { id },
+      relations: ['children', 'parent'],
+    });
+  }
+
+  async getChildrenCategoriesArr(id: number) {
+    const res = await Category.findOne({
+      where: { id },
+      relations: ['children'],
+    });
+    const childIds = res.children.map((child) => child.id);
+
+    return [id, ...childIds];
   }
 
   async createCategory(data: createCateDto) {

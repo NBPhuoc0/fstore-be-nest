@@ -23,12 +23,14 @@ import {
 } from 'src/entities';
 import { Photo } from 'src/entities/photo.entity';
 import { DataSource, In, Repository } from 'typeorm';
+import { ProductUtilsService } from './product-utils.service';
 
 @Injectable()
 export class ProductService {
   constructor(
     private dataSource: DataSource,
     private readonly s3ClientService: S3ClientService,
+    private readonly productUtilsService: ProductUtilsService,
   ) {}
 
   private getFirst4Char(str: string): string {
@@ -47,8 +49,8 @@ export class ProductService {
 
   // lấy sản phẩm theo bộ lọc
   async getProductsWithFilter(
-    page = 0,
-    limit = 10,
+    page?: number,
+    limit?: number,
     category?: string,
     brand?: string,
     color?: string,
@@ -56,7 +58,7 @@ export class ProductService {
     orderType?: number, // 1: price ASC, 2: price DESC, 3: newest, 4: oldest
   ): Promise<PaginatedResponse<Product>> {
     if (!orderType || orderType < 1 || orderType > 4) {
-      orderType = 3;
+      orderType = 4;
     }
     const orderOptions: Record<
       number,
@@ -64,42 +66,53 @@ export class ProductService {
     > = {
       1: { sort: 'original_price', order: 'ASC' }, // Giá tăng dần
       2: { sort: 'original_price', order: 'DESC' }, // Giá giảm dần
-      3: { sort: 'created_at', order: 'DESC' }, // Mới nhất
-      4: { sort: 'created_at', order: 'ASC' }, // Cũ nhất
+      3: { sort: 'created_date', order: 'DESC' }, // Mới nhất
+      4: { sort: 'created_date', order: 'ASC' }, // Cũ nhất
     };
+    page = Number(page) || 0; // Mặc định trang đầu tiên
+    limit = Number(limit) || 10; // Mặc định số lượng sản phẩm mỗi trang
     const { sort, order } = orderOptions[orderType];
     const query = this.dataSource
       .createQueryBuilder(Product, 'product')
       .leftJoinAndSelect('product.category', 'category')
       .leftJoinAndSelect('product.brand', 'brand')
+      .leftJoinAndSelect('product.photos', 'photo')
       .leftJoinAndSelect('product.variants', 'variants')
       .leftJoinAndSelect('variants.color', 'color')
       .leftJoinAndSelect('variants.size', 'size')
-      .orderBy(sort, order) //
-      .skip(page * limit)
-      .take(limit);
+      // .orderBy('product.' + sort, order) //
+      .take(limit) // Giới hạn số lượng sản phẩm trả về
+      .skip(page * limit); // Bỏ qua số lượng sản phẩm đã hiển thị
 
     // Lọc theo category
     if (category) {
-      query.andWhere('category.name = :category', { category });
+      const childrenCategories =
+        await this.productUtilsService.getChildrenCategoriesArr(+category);
+      if (childrenCategories.length > 1) {
+        query.andWhere('category.id IN (:...childrenCategories)', {
+          childrenCategories,
+        });
+      } else query.andWhere('category.id = :category', { category });
     }
 
     // Lọc theo brand
     if (brand) {
-      query.andWhere('brand.name = :brand', { brand });
+      query.andWhere('brand.id = :brand', { brand });
     }
 
     // Lọc theo color (màu sắc từ ProductVariant)
     if (color) {
-      query.andWhere('color.name = :color', { color });
+      query.andWhere('color.id = :color', { color });
     }
 
     // Lọc theo size (kích thước từ ProductVariant)
     if (size) {
-      query.andWhere('size.name = :size', { size });
+      query.andWhere('size.id = :size', { size });
     }
 
     // Lấy kết quả và tổng số sản phẩm
+
+    this.logger.log(query.getQueryAndParameters()); // Log the query for debugging
     const [data, total] = await query.getManyAndCount();
 
     return {
