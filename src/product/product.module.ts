@@ -12,6 +12,7 @@ import {
   ProductVariant,
 } from 'src/entities';
 import { ProductUtilsService } from './services/product-utils.service';
+import { ChatModule } from 'src/chatbot/chat.module';
 
 @Module({
   imports: [],

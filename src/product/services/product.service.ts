@@ -44,7 +44,9 @@ export class ProductService {
 
   // lấy tất cả sản phẩm
   async getProducts(): Promise<Product[]> {
-    return Product.find();
+    return Product.find({
+      relations: ['variants'],
+    });
   }
 
   // lấy sản phẩm theo bộ lọc
@@ -70,7 +72,7 @@ export class ProductService {
       4: { sort: 'created_date', order: 'ASC' }, // Cũ nhất
     };
     page = Number(page) || 0; // Mặc định trang đầu tiên
-    limit = Number(limit) || 10; // Mặc định số lượng sản phẩm mỗi trang
+    limit = Number(limit) || 12; // Mặc định số lượng sản phẩm mỗi trang
     const { sort, order } = orderOptions[orderType];
     const query = this.dataSource
       .createQueryBuilder(Product, 'product')
@@ -78,6 +80,7 @@ export class ProductService {
       .leftJoinAndSelect('product.brand', 'brand')
       .leftJoinAndSelect('product.photos', 'photo')
       .leftJoinAndSelect('product.variants', 'variants')
+      .leftJoinAndSelect('product.colors', 'colors')
       .leftJoinAndSelect('variants.color', 'color')
       .leftJoinAndSelect('variants.size', 'size')
       // .orderBy('product.' + sort, order) //
@@ -112,7 +115,7 @@ export class ProductService {
 
     // Lấy kết quả và tổng số sản phẩm
 
-    this.logger.log(query.getQueryAndParameters()); // Log the query for debugging
+    // this.logger.log(query.getQueryAndParameters()); // Log the query for debugging
     const [data, total] = await query.getManyAndCount();
 
     return {
@@ -126,7 +129,40 @@ export class ProductService {
 
   // lấy sản phẩm theo id
   async getProductById(id: number): Promise<Product> {
-    return Product.findOneBy({ id });
+    return Product.findOne({
+      where: { id },
+      relations: [
+        'category',
+        'brand',
+        'photos',
+        'variants',
+        'variants.color',
+        'variants.size',
+        'colors',
+        'sizes',
+      ],
+    });
+  }
+
+  async getProductsByIds(ids: number[]): Promise<Product[]> {
+    // if (!ids || ids.length === 0) {
+    //   throw new BadRequestException('Product IDs are required');
+    // }
+    return Product.findBy({
+      id: In(ids),
+    });
+  }
+
+  async getIdsandNames(): Promise<{ id: number; name: string }[]> {
+    return Product.createQueryBuilder('product')
+      .select(['product.id', 'product.name'])
+      .getMany()
+      .then((products) =>
+        products.map((product) => ({
+          id: product.id,
+          name: product.name,
+        })),
+      );
   }
 
   // tạo mới sản phẩm

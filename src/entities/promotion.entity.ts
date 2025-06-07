@@ -38,7 +38,7 @@ export class Promotion extends BaseEntity {
   @Column({ nullable: true, type: 'float', name: 'max_discount' })
   maxDiscount: number;
 
-  @Column({ nullable: false })
+  @Column({ nullable: true })
   image: string;
 
   @Column({ nullable: false, type: 'timestamp', name: 'start_date' })

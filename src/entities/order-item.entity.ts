@@ -15,7 +15,7 @@ export class OrderItem extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Order, { nullable: false })
+  @ManyToOne(() => Order, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'order_id' })
   order: Order;
 

@@ -27,6 +27,12 @@ export class Order extends BaseEntity {
   status: OrderStatus;
 
   @Column({ nullable: false })
+  name: string;
+
+  @Column({ nullable: false })
+  email: string;
+
+  @Column({ nullable: false })
   address: string;
 
   @Column({ nullable: false })
@@ -56,12 +62,12 @@ export class Order extends BaseEntity {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: string;
 
-  @ManyToOne(() => User, { nullable: false })
-  @JoinColumn({ name: 'user_id' })
-  user: User;
+  // @ManyToOne(() => User, { nullable: false })
+  // @JoinColumn({ name: 'user_id' })
+  // user: User;
 
-  @Column({ nullable: false, name: 'user_id' })
-  userId: number;
+  // @Column({ nullable: false, name: 'user_id' })
+  // userId: number;
 
   @ManyToOne(() => Voucher, { nullable: true })
   @JoinColumn({ name: 'voucher_id' })
@@ -70,6 +76,8 @@ export class Order extends BaseEntity {
   @Column({ nullable: true, name: 'voucher_id' })
   voucherId: number;
 
-  @OneToMany(() => OrderItem, (orderItem) => orderItem.order)
+  @OneToMany(() => OrderItem, (orderItem) => orderItem.order, {
+    cascade: true,
+  })
   orderItems: OrderItem[];
 }

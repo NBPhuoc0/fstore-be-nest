@@ -24,6 +24,9 @@ import { createCateDto } from 'src/dto/req/create-cate.dto';
 import { createColorDto } from 'src/dto/req/create-color.dto';
 import { S3ClientService } from 'src/common/services/s3-client.service';
 import { AdminAuthGuard } from 'src/auth/guards/admin.auth.guard';
+import { CreatePromotionDto } from 'src/dto/req/create-promotion.dto';
+import { PromotionService } from 'src/promotion/promotion.service';
+import { OrderService } from 'src/order/order.service';
 
 @ApiBearerAuth('Authorization')
 // @UseGuards(AdminAuthGuard)
@@ -33,6 +36,8 @@ export class AdminController {
     private readonly adminService: AdminService,
     private readonly productService: ProductService,
     private readonly productUtilService: ProductUtilsService,
+    private readonly promotionService: PromotionService,
+    private readonly orderService: OrderService,
     private readonly s3ClientService: S3ClientService,
   ) {}
 
@@ -243,5 +248,31 @@ export class AdminController {
   @Delete('products/:id')
   removeProduct(@Param('id') id: string) {
     return this.productService.deleteProduct(+id);
+  }
+
+  // Promotions
+  @ApiTags('Promotion')
+  @Get('promotions')
+  async getAllPromotions() {
+    return this.promotionService.getPromotions();
+  }
+
+  @ApiTags('Promotion')
+  @Get('promotions/:id')
+  async getPromotionById(@Param('id') id: string) {
+    return this.promotionService.getPromotionById(+id);
+  }
+
+  @ApiTags('Promotion')
+  @Post('promotions')
+  async createPromotion(@Body() dto: CreatePromotionDto) {
+    return this.promotionService.createPromotion(dto);
+  }
+
+  //**Order */
+  @ApiTags('Order')
+  @Get('orders')
+  async getAllOrders() {
+    return this.orderService.getOrders();
   }
 }

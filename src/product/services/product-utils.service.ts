@@ -52,6 +52,9 @@ export class ProductUtilsService {
       where: { id },
       relations: ['children'],
     });
+    if (!res) {
+      return [];
+    }
     const childIds = res.children.map((child) => child.id);
 
     return [id, ...childIds];

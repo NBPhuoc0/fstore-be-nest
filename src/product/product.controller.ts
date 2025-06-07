@@ -1,4 +1,12 @@
-import { Controller, Get, Logger, Param, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Logger,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ProductService } from './services/product.service';
 import { CacheService } from 'src/common/services/cache.service';
 import { json } from 'express';
@@ -6,6 +14,9 @@ import { PaginatedResponse } from 'src/dto/res/paginated-response.dto';
 import { Product } from 'src/entities';
 import { CachePatterns } from 'src/common/enums';
 import { ProductUtilsService } from './services/product-utils.service';
+import { VectorStoreService } from 'src/chatbot/vector-db.service';
+import { EmbeddingService } from 'src/chatbot/embedding.service';
+import { ChatService } from 'src/chatbot/chat.service';
 
 @Controller('product')
 export class ProductController {

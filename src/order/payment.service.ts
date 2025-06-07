@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import PayOS from '@payos/node';
 const PayOs = require('@payos/node');
@@ -9,10 +9,11 @@ import {
   WebhookDataType,
 } from 'src/common/types';
 import { Order } from 'src/entities/order.entity';
+import { OrderService } from './order.service';
 
 @Injectable()
 export class PaymentService {
-  //   constructor(private configService: ConfigService) {
+  constructor(private readonly orderService: OrderService) {}
   //     const payos = new PayOS(
   //       this.configService.get<string>('PAYOS_CLIENT_ID'),
   //       this.configService.get<string>('PAYOS_API_KEY'),
@@ -27,6 +28,8 @@ export class PaymentService {
     process.env.PAYOS_API_KEY,
     process.env.PAYOS_CHECKSUM_KEY,
   );
+
+  private returnUrl = 'localhost:5173/submitorder';
 
   async createPayOSPaymentTest(): Promise<CheckoutResponseDataType> {
     const body = {
@@ -47,21 +50,25 @@ export class PaymentService {
     return this.payos.createPaymentLink(body);
   }
 
-  async createPayment(order: Order): Promise<CheckoutResponseDataType> {
+  async createPayment(orderId: number): Promise<CheckoutResponseDataType> {
+    const order = await this.orderService.getOrderById(orderId);
+    // return order;
     const body: CheckoutRequestType = {
       orderCode: order.id,
-      // amount: order.totalPrice,
-      amount: 1000, //! test
+      amount: order.total,
+      // amount: 1000, //! test
       description: 'Thanh toan don hang ' + order.id,
       items: order.orderItems.map((orderDetail) => ({
-        name: orderDetail.product.name + ' ' + orderDetail.variant.color,
+        name: orderDetail.product.name + ' ' + orderDetail.variant.color.name,
         quantity: orderDetail.quantity,
         price:
-          orderDetail.product.salePrice || orderDetail.product.originalPrice,
+          +orderDetail.product.salePrice || +orderDetail.product.originalPrice,
       })),
-      buyerName: order.user.fullName,
-      buyerEmail: order.user.email,
-      returnUrl: `https://github.com`,
+      buyerName: order.name,
+      buyerEmail: order.email,
+      buyerPhone: order.phone,
+      buyerAddress: order.address,
+      returnUrl: this.returnUrl,
       cancelUrl: `https://github.com`,
     };
     return this.payos.createPaymentLink(body);
@@ -71,8 +78,23 @@ export class PaymentService {
     return this.payos.getPaymentLinkInformation(id);
   }
 
+  changeReturnUrl(url: string): void {
+    this.returnUrl = url;
+    Logger.log(`Return URL changed to: ${this.returnUrl}`, 'PaymentService');
+  }
+
+  async confirmWebhook(url: string): Promise<string> {
+    return this.payos.confirmWebhook(url);
+  }
+
   async verifyPayOSPayment(query: any): Promise<WebhookDataType> {
-    return this.payos.verifyPaymentWebhookData(query);
+    const res = this.payos.verifyPaymentWebhookData(query);
+    this.orderService.confirmOrder(res.orderCode);
+    Logger.log(
+      `Payment verification success: ${JSON.stringify(res.orderCode)}`,
+      'PaymentService',
+    );
+    return res;
   }
 
   async cancelPayOSPayment(

@@ -45,8 +45,8 @@ export class User extends BaseEntity {
   @JoinColumn({ name: 'cart_id' })
   cart: Cart;
 
-  @OneToMany(() => Order, (order) => order.user)
-  orders: Order[];
+  // @OneToMany(() => Order, (order) => order.user)
+  // orders: Order[];
 
   @Column({ default: false, name: 'is_admin' })
   isAdmin: boolean;

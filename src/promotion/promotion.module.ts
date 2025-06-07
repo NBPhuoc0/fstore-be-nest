@@ -9,5 +9,6 @@ import { ProductModule } from 'src/product/product.module';
   imports: [],
   controllers: [PromotionController],
   providers: [PromotionService],
+  exports: [PromotionService],
 })
 export class PromotionModule {}

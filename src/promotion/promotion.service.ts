@@ -1,15 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import slugify from 'slugify';
+import { PromotionType } from 'src/common/enums';
 import { CreatePromotionDto } from 'src/dto/req/create-promotion.dto';
 import { CreateVoucherDto } from 'src/dto/req/create-voucher.dto';
 import { Product, Promotion, Voucher } from 'src/entities';
 import { ProductService } from 'src/product/services/product.service';
-import { In, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 
 @Injectable()
 export class PromotionService {
-  constructor() {}
+  constructor(private dataSource: DataSource) {}
 
   //**Products Promotion */
   // lấy tất cả khuyến mãi
@@ -30,19 +31,65 @@ export class PromotionService {
   }
 
   // thêm sản phẩm vào khuyến mãi
-  async addProductToPromotion(promotionId: number, productIds: number[]) {
-    return await Product.update({ id: In(productIds) }, { promotionId });
+  async addProductToPromotion(promotion: Promotion, productIds: number[]) {
+    return await this.dataSource.manager.transaction(async (manager) => {
+      const products = await manager.find(Product, {
+        where: { id: In(productIds) },
+      });
+
+      const updatedProducts = products.map((product) => {
+        let salePrice = product.originalPrice;
+
+        switch (promotion.type) {
+          case PromotionType.PERCENT:
+            let discount = product.originalPrice * (promotion.value / 100);
+            if (promotion.maxDiscount && discount > promotion.maxDiscount) {
+              discount = promotion.maxDiscount;
+            }
+            salePrice = product.originalPrice - discount;
+            break;
+          case PromotionType.AMOUNT:
+            salePrice = product.originalPrice - promotion.value;
+            break;
+          case PromotionType.FLAT:
+            salePrice = promotion.value;
+            break;
+        }
+
+        if (salePrice < 0) salePrice = 0;
+
+        return {
+          ...product,
+          promotionId: promotion.id,
+          promotion: promotion,
+          salePrice: Math.round(salePrice),
+        };
+      });
+
+      await manager.save(Product, updatedProducts);
+    });
   }
 
   // xóa sản phẩm khỏi khuyến mãi
-  async removeProductFromPromotion(promotionId: number, productIds: number[]) {
-    return await Product.update({ id: In(productIds) }, { promotionId: null });
+  async removePromotionFromProducts(productIds: number[]) {
+    return await Product.update(
+      { id: In(productIds) },
+      { promotionId: null, salePrice: null, promotion: null },
+    );
   }
 
   // tắt khuyến mãi
   async disablePromotion(promotionId: number) {
     await Promotion.update({ id: promotionId }, { status: false });
-    return Product.update({ promotionId }, { promotionId: null });
+    const promo = await Promotion.findOne({
+      where: { id: promotionId },
+      relations: ['products'],
+    });
+    if (promo) {
+      let productIds = promo.products.map((product) => product.id);
+      await this.removePromotionFromProducts(productIds);
+    }
+    return;
   }
 
   // bật khuyến mãi
@@ -55,7 +102,7 @@ export class PromotionService {
     promo.status = true;
     promo.save();
     let productIds = promo.products.map((product) => product.id);
-    this.addProductToPromotion(promo.id, productIds);
+    this.addProductToPromotion(promo, productIds);
     return;
   }
 

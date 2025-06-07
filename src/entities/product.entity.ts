@@ -67,7 +67,7 @@ export class Product extends BaseEntity {
 
   @ManyToOne(() => Promotion, (promotion) => promotion.products, {
     nullable: true,
-    eager: true,
+    // eager: true,
   })
   @JoinColumn({ name: 'promotion_id' })
   promotion: Promotion;

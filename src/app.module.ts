@@ -27,6 +27,8 @@ import { CommonModule } from './common/common.module';
 import { PromotionModule } from './promotion/promotion.module';
 import { AdminModule } from './admin/admin.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ChatModule } from './chatbot/chat.module';
+import { MailerModule } from '@nestjs-modules/mailer';
 
 @Module({
   imports: [
@@ -73,6 +75,22 @@ import { ScheduleModule } from '@nestjs/schedule';
       //   duration: 86400000,
       // },
     }),
+    MailerModule.forRootAsync({
+      useFactory: () => ({
+        transport: {
+          host: 'email-smtp.ap-southeast-1.amazonaws.com',
+          port: 587,
+          secure: false,
+          auth: {
+            user: 'AKIARVVM3FSM22DWAFWT',
+            pass: 'BPOTMMFaX+md0qVfdixa99+OHZGFTISyLU3Ze+05OWZF',
+          },
+        },
+        defaults: {
+          from: '"fstore" <fstore@nbphuoc.xyz>',
+        },
+      }),
+    }),
     ScheduleModule.forRoot(),
     AuthModule,
     UserModule,
@@ -81,6 +99,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     CommonModule,
     PromotionModule,
     AdminModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],
