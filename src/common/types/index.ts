@@ -79,3 +79,18 @@ export type WebhookDataType = {
   virtualAccountNumber?: string | null; // Số tài khoản ảo
 };
 export type RequestWithUser = Request & { user: User };
+
+export type ChatSession = {
+  chat: any;
+  lastActivity: Date;
+};
+export type suggestPayload = {
+  id: number;
+  name: string;
+  // description: string;
+  price: number;
+  category: string;
+  brand: string;
+  color: string[];
+  size: string[];
+};

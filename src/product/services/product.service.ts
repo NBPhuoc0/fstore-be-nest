@@ -66,10 +66,10 @@ export class ProductService {
       number,
       { sort: string; order: 'ASC' | 'DESC' }
     > = {
-      1: { sort: 'original_price', order: 'ASC' }, // Giá tăng dần
-      2: { sort: 'original_price', order: 'DESC' }, // Giá giảm dần
-      3: { sort: 'created_date', order: 'DESC' }, // Mới nhất
-      4: { sort: 'created_date', order: 'ASC' }, // Cũ nhất
+      1: { sort: 'originalPrice', order: 'ASC' }, // Giá tăng dần
+      2: { sort: 'originalPrice', order: 'DESC' }, // Giá giảm dần
+      3: { sort: 'createdDate', order: 'DESC' }, // Mới nhất
+      4: { sort: 'createdDate', order: 'ASC' }, // Cũ nhất
     };
     page = Number(page) || 0; // Mặc định trang đầu tiên
     limit = Number(limit) || 12; // Mặc định số lượng sản phẩm mỗi trang
@@ -83,7 +83,7 @@ export class ProductService {
       .leftJoinAndSelect('product.colors', 'colors')
       .leftJoinAndSelect('variants.color', 'color')
       .leftJoinAndSelect('variants.size', 'size')
-      // .orderBy('product.' + sort, order) //
+      .orderBy('product.' + sort, order) //
       .take(limit) // Giới hạn số lượng sản phẩm trả về
       .skip(page * limit); // Bỏ qua số lượng sản phẩm đã hiển thị
 
@@ -115,7 +115,7 @@ export class ProductService {
 
     // Lấy kết quả và tổng số sản phẩm
 
-    // this.logger.log(query.getQueryAndParameters()); // Log the query for debugging
+    this.logger.log(query.getQueryAndParameters()); // Log the query for debugging
     const [data, total] = await query.getManyAndCount();
 
     return {

@@ -125,4 +125,17 @@ export class VectorStoreService {
     });
     return result;
   }
+
+  async exportCollection() {
+    try {
+      const response = await this.client.getCollection(this.collectionName);
+      return response;
+    } catch (error) {
+      return {
+        status: 'error',
+        message: `Error exporting collection ${this.collectionName}.`,
+        error: error.message,
+      };
+    }
+  }
 }

@@ -6,11 +6,8 @@ import { EmbeddingService } from './embedding.service';
 import { ProductService } from 'src/product/services/product.service';
 import { v4 } from 'uuid';
 import { FashionBotPolicy } from './prompts';
+import { ChatSession, suggestPayload } from 'src/common/types';
 
-interface ChatSession {
-  chat: any;
-  lastActivity: Date;
-}
 @Injectable()
 export class ChatService {
   private ai: GoogleGenAI;
@@ -56,7 +53,7 @@ export class ChatService {
     const points: {
       id: string;
       vector: number[];
-      payload: any;
+      payload: suggestPayload;
     }[] = [];
 
     for (const product of products) {
@@ -89,7 +86,7 @@ export class ChatService {
     return await this.vertorStoreService.upsertVector(points);
   }
 
-  async suggestProducts(query: string): Promise<any> {
+  async suggestProducts(query: string): Promise<suggestPayload[]> {
     const embedding = await this.embeddingService.getEmbedding(query);
     const results = await this.vertorStoreService.searchVector(embedding);
 
