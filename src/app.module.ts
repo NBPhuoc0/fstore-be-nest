@@ -29,6 +29,9 @@ import { AdminModule } from './admin/admin.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ChatModule } from './chatbot/chat.module';
 import { MailerModule } from '@nestjs-modules/mailer';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { InventoryModule } from './inventory/inventory.module';
+import { Ticket } from './entities/ticket.entity';
 
 @Module({
   imports: [
@@ -58,6 +61,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
         Cart,
         CartItem,
         Voucher,
+        Ticket,
       ],
       migrations: ['seed/migrations/*.ts'],
       autoLoadEntities: true,
@@ -92,6 +96,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
       }),
     }),
     ScheduleModule.forRoot(),
+    EventEmitterModule.forRoot(),
     AuthModule,
     UserModule,
     OrderModule,
@@ -100,6 +105,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
     PromotionModule,
     AdminModule,
     ChatModule,
+    InventoryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -10,13 +10,9 @@ import {
 } from 'typeorm';
 
 @Entity('vouchers')
-@Index('idx_vouchers_code', ['code'], { unique: true }) // Unique index cho code
 export class Voucher extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
-
-  @Column({ nullable: false })
-  code: string;
 
   @Column({ nullable: false })
   name: string;
@@ -39,17 +35,14 @@ export class Voucher extends BaseEntity {
   @Column({ nullable: true })
   image: string;
 
-  @Column({ nullable: false, type: 'timestamp', name: 'start_date' })
-  startDate: Date;
-
-  @Column({ nullable: false, type: 'timestamp', name: 'end_date' })
-  endDate: Date;
-
   @Column({ nullable: false })
   quantity: number;
 
   @Column({ nullable: false, default: 0, name: 'used_quantity' })
   usedQuantity: number;
+
+  @Column({ nullable: false, type: 'float', name: 'budget_used', default: 0 })
+  budgetUsed: number;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

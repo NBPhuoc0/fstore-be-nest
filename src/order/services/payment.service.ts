@@ -29,7 +29,7 @@ export class PaymentService {
     process.env.PAYOS_CHECKSUM_KEY,
   );
 
-  private returnUrl = 'localhost:5173/submitorder';
+  // private returnUrl = 'localhost:5173/submitorder';
 
   async createPayOSPaymentTest(): Promise<CheckoutResponseDataType> {
     const body = {
@@ -50,13 +50,16 @@ export class PaymentService {
     return this.payos.createPaymentLink(body);
   }
 
-  async createPayment(orderId: number): Promise<CheckoutResponseDataType> {
+  async createPayment(
+    orderId: number,
+    returnUrl: string,
+  ): Promise<CheckoutResponseDataType> {
     const order = await this.orderService.getOrderById(orderId);
     // return order;
     const body: CheckoutRequestType = {
       orderCode: order.id,
-      amount: order.total,
-      // amount: 1000, //! test
+      // amount: order.total,
+      amount: 2000, //! test
       description: 'Thanh toan don hang ' + order.id,
       items: order.orderItems.map((orderDetail) => ({
         name: orderDetail.product.name + ' ' + orderDetail.variant.color.name,
@@ -68,8 +71,8 @@ export class PaymentService {
       buyerEmail: order.email,
       buyerPhone: order.phone,
       buyerAddress: order.address,
-      returnUrl: this.returnUrl,
-      cancelUrl: `https://github.com`,
+      returnUrl: returnUrl,
+      cancelUrl: returnUrl,
     };
     return this.payos.createPaymentLink(body);
   }
@@ -78,18 +81,18 @@ export class PaymentService {
     return this.payos.getPaymentLinkInformation(id);
   }
 
-  changeReturnUrl(url: string): void {
-    this.returnUrl = url;
-    Logger.log(`Return URL changed to: ${this.returnUrl}`, 'PaymentService');
-  }
+  // changeReturnUrl(url: string): void {
+  //   // this.returnUrl = url;
+  //   // Logger.log(`Return URL changed to: ${this.returnUrl}`, 'PaymentService');
+  // }
 
   async confirmWebhook(url: string): Promise<string> {
-    return this.payos.confirmWebhook(url);
+    return await this.payos.confirmWebhook(url);
   }
 
   async verifyPayOSPayment(query: any): Promise<WebhookDataType> {
     const res = this.payos.verifyPaymentWebhookData(query);
-    this.orderService.confirmOrder(res.orderCode);
+    if (res) this.orderService.confirmOrderPay(res.orderCode);
     Logger.log(
       `Payment verification success: ${JSON.stringify(res.orderCode)}`,
       'PaymentService',

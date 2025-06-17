@@ -6,8 +6,13 @@ export enum OrderPaymentMethod {
 export enum OrderStatus {
   PENDING = 'PENDING',
   PROCESSING = 'PROCESSING',
-  DELIVERED = 'DELIVERED',
+  DELIVERING = 'DELIVERING',
   CANCELLED = 'CANCELLED',
+  COMPLETED = 'COMPLETED',
+  RETURN_PROCESSING = 'RETURN_PROCESSING',
+  RETURNED = 'RETURNED',
+  EXCHANGED = 'EXCHANGED',
+  WAITING_REFUND = 'WAITING_REFUND',
 }
 
 export enum VoucherType {
@@ -26,4 +31,17 @@ export enum CachePatterns {
   ProductViewWeekly = 'product_view_weekly',
   ProductViewMonthly = 'product_view_monthly',
   Product = 'product',
+}
+
+export enum TicketType {
+  RETURNED = 'RETURNED',
+  EXCHANGE = 'EXCHANGE',
+  COMPLAINT = 'COMPLAINT',
+  OTHERS = 'OTHERS',
+}
+
+export enum TicketStatus {
+  PENDING = 'PENDING',
+  COMPLETED = 'COMPLETED',
+  REJECTED = 'REJECTED',
 }

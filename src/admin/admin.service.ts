@@ -1,24 +1,38 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { Inventory, ProductVariant } from 'src/entities';
+import { DataSource } from 'typeorm';
 
 @Injectable()
 export class AdminService {
-  create( ) {
-    return 'This action adds a new admin';
-  }
+  constructor(readonly dataSource: DataSource) {}
 
-  findAll() {
-    return `This action returns all admin`;
-  }
+  // async syncExistingVariantsWithoutInventory(): Promise<void> {
+  //   const variants = await this.dataSource.getRepository(ProductVariant).find({
+  //     where: { inventoryId: null },
+  //   });
 
-  findOne(id: number) {
-    return `This action returns a #${id} admin`;
-  }
+  //   for (const variant of variants) {
+  //     const inventory = await this.dataSource.getRepository(Inventory).save({
+  //       variantId: variant.id,
+  //       productId: variant.productId,
+  //       stockQuantity: 10,
+  //     });
 
-  update(id: number ) {
-    return `This action updates a #${id} admin`;
-  }
+  //     // variant.inventoryId = inventory.id;
+  //     const res = await this.dataSource
+  //       .getRepository(ProductVariant)
+  //       .save(variant);
+  //     Logger.log(res, 'admin service: ');
+  //   }
+  // }
 
-  remove(id: number) {
-    return `This action removes a #${id} admin`;
-  }
+  // async syncInventoryForAllVariants(): Promise<void> {
+  //   const variants = await this.dataSource
+  //     .getRepository(ProductVariant)
+  //     .find({});
+  //   for (const variant of variants) {
+  //     // variant.instock = false; // Default to false
+  //     await this.dataSource.getRepository(ProductVariant).save(variant);
+  //   }
+  // }
 }

@@ -5,10 +5,12 @@ import {
   ManyToOne,
   JoinColumn,
   BaseEntity,
+  OneToOne,
 } from 'typeorm';
 import { Color } from './color.entity';
 import { Size } from './size.entity';
 import { Product } from './product.entity';
+import { Inventory } from './inventory.entity';
 
 @Entity('product_variants')
 export class ProductVariant extends BaseEntity {
@@ -18,11 +20,18 @@ export class ProductVariant extends BaseEntity {
   @Column({ nullable: false })
   code: string;
 
-  @Column({ nullable: true, name: 'inventory_quantity' })
-  inventoryQuantity: number;
+  // @Column({ nullable: true, name: 'inventory_quantity' })
+  // inventoryQuantity: number;
+  //
+  // @OneToOne(() => Inventory, { cascade: true, eager: true })
+  // @JoinColumn({ name: 'inventory_id' })
+  // inventory: Inventory;
 
-  @Column({ default: true })
-  instock: boolean;
+  // @Column({ name: 'inventory_id', nullable: true })
+  // inventoryId: number;
+
+  // @Column({ default: false })
+  // instock: boolean;
 
   @Column({ nullable: true, name: 'color_id' })
   colorId: number;

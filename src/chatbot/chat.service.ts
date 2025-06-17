@@ -49,7 +49,7 @@ export class ChatService {
   async importDatatoVectorStore() {
     await this.vertorStoreService.createCollection();
 
-    const products = await this.productService.getProducts();
+    const { data: products, total } = await this.productService.getProducts();
     const points: {
       id: string;
       vector: number[];

@@ -22,7 +22,7 @@ export class Order extends BaseEntity {
   @Column({
     nullable: false,
     enum: OrderStatus,
-    default: OrderStatus.PROCESSING,
+    default: OrderStatus.PENDING,
   })
   status: OrderStatus;
 
@@ -44,7 +44,10 @@ export class Order extends BaseEntity {
   @Column({ nullable: true, name: 'payment_ref' })
   paymentRef: string;
 
-  @Column({ nullable: false, type: 'float', name: 'shipping_fee' })
+  @Column({ nullable: true, name: 'shipping_ref' })
+  shippingRef: string;
+
+  @Column({ nullable: true, type: 'float', name: 'shipping_fee' })
   shippingFee: number;
 
   @Column({ nullable: false, type: 'float', name: 'sub_total' })
@@ -57,10 +60,10 @@ export class Order extends BaseEntity {
   total: number;
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: string;
+  createdAt: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: string;
+  updatedAt: Date;
 
   // @ManyToOne(() => User, { nullable: false })
   // @JoinColumn({ name: 'user_id' })
@@ -80,4 +83,7 @@ export class Order extends BaseEntity {
     cascade: true,
   })
   orderItems: OrderItem[];
+
+  @Column({ nullable: true, name: 'return_reason' })
+  returnReason: string;
 }

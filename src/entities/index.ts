@@ -12,7 +12,9 @@ export { OrderItem } from './order-item.entity';
 export { Cart } from './cart.entity';
 export { CartItem } from './cart-item.entity';
 export { Voucher } from './voucher.entity';
-
+export { Inventory } from './inventory.entity';
+export { InventoryTransaction } from './inventory-transaction.entity';
+export { ImportBatch } from './import-batch.entity';
 // export {
 //   Color,
 //   User,

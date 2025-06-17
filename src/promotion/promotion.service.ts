@@ -125,20 +125,25 @@ export class PromotionService {
   // tạo mới voucher
   async createVoucher(dto: CreateVoucherDto) {
     const voucher = Voucher.create({ ...dto });
-    voucher.code = slugify(dto.name, { lower: true });
+    // voucher = slugify(dto.name, { lower: true });
     return Voucher.save(voucher);
   }
 
   // xoá voucher
-  async removeVoucher(voucherId: number) {
+  async removeVoucher(id: number) {
     return Voucher.delete({
-      id: voucherId,
+      id: id,
     });
   }
 
   // tắt voucher
-  async disableVoucher(voucherId: number) {
-    return Voucher.update({ id: voucherId }, { status: false });
+  async changeState(voucherId: number) {
+    const voucher = await Voucher.findOneBy({ id: voucherId });
+    if (!voucher) {
+      throw new Error('Voucher not found');
+    }
+    voucher.status = !voucher.status; // toggle status
+    return Voucher.save(voucher);
   }
 
   // bật voucher

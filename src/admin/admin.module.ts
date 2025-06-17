@@ -5,6 +5,7 @@ import { ProductModule } from 'src/product/product.module';
 import { OrderModule } from 'src/order/order.module';
 import { UserModule } from 'src/user/user.module';
 import { PromotionModule } from 'src/promotion/promotion.module';
+import { InventoryModule } from 'src/inventory/inventory.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { PromotionModule } from 'src/promotion/promotion.module';
     OrderModule,
     UserModule,
     PromotionModule,
+    InventoryModule,
   ],
   controllers: [AdminController],
   providers: [AdminService],

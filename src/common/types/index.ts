@@ -94,3 +94,8 @@ export type suggestPayload = {
   color: string[];
   size: string[];
 };
+
+export type DailyRevenue = {
+  date: string;
+  totalRevenue: number;
+};

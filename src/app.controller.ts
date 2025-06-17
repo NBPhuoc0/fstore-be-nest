@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Logger,
+  Param,
   Post,
   Query,
   Redirect,
@@ -13,7 +14,10 @@ import { ChatService } from './chatbot/chat.service';
 import { get } from 'http';
 import { ProductService } from './product/services/product.service';
 import { PaginatedResponse } from './dto/res/paginated-response.dto';
-import { Product } from './entities';
+import { Order, Product } from './entities';
+import { TicketService } from './order/services/ticket.service';
+import { CreateTicketDto } from './dto/req/create-ticket.dto';
+import { PromotionService } from './promotion/promotion.service';
 
 @Controller()
 export class AppController {
@@ -21,11 +25,14 @@ export class AppController {
     private readonly appService: AppService,
     private readonly chatService: ChatService,
     private readonly productService: ProductService,
+    private readonly ticketService: TicketService,
+    private readonly promotionService: PromotionService,
   ) {}
 
   @Get()
+  @Redirect('/api/docs', 302)
   index(@Res() res) {
-    res.status(302).redirect('/api/docs');
+    // res.status(302).redirect('/api/docs');
   }
 
   @Get('search')
@@ -55,8 +62,20 @@ export class AppController {
     return res;
   }
 
-  @Get('mail')
-  async sendMail() {
-    return await this.appService.sendMail();
+  @Get('voucher')
+  async getVoucher() {
+    return this.promotionService.getVouchers();
+  }
+
+  @Get('ticket/:id')
+  async getTicketById(@Param('id') id: number) {
+    // Logger.log(`Fetching ticket with ID: ${id}`, 'AppController');
+    return await this.ticketService.getTicketById(+id);
+  }
+
+  @Post('ticket')
+  async createTicket(@Body() dto: CreateTicketDto) {
+    // return dto;
+    return await this.ticketService.createTicket(dto);
   }
 }

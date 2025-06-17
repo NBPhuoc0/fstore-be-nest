@@ -27,12 +27,4 @@ export class CreateVoucherDto {
   @ApiProperty()
   @IsNotEmpty()
   quantity: number;
-
-  @ApiProperty()
-  @IsNotEmpty()
-  startDate: Date;
-
-  @ApiProperty()
-  @IsNotEmpty()
-  endDate: Date;
 }

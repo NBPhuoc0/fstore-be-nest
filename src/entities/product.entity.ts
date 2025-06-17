@@ -47,8 +47,8 @@ export class Product extends BaseEntity {
   @Column({ default: true })
   display: boolean;
 
-  @Column({ default: true, name: 'inventory_status' })
-  inventoryStatus: boolean;
+  // @Column({ default: true, name: 'inventory_status' })
+  // inventoryStatus: boolean;
 
   @Column({ nullable: false, type: 'decimal', name: 'original_price' })
   originalPrice: number;

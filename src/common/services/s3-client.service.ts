@@ -74,19 +74,23 @@ export class S3ClientService {
   }
 
   // upload file form server
-  uploadFileToPublicBucket(code: string, file: Express.Multer.File): string {
+  uploadFileToPublicBucket(
+    code: string,
+    file: Express.Multer.File,
+    type: string = 'products',
+  ): string {
     try {
       this.client.send(
         new PutObjectCommand({
           Bucket: this.bucketName,
-          Key: `products/${code}`,
+          Key: `${type}/${code}`,
           Body: file.buffer,
           ContentType: file.mimetype,
           ACL: 'public-read',
           ContentLength: file.size, // calculate length of buffer
         }),
       );
-      return `${this.s3_endpoint}/products/` + code;
+      return `${this.s3_endpoint}/${type}/` + code;
     } catch (error) {
       throw new InternalServerErrorException(error);
     }

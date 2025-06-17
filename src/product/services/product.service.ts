@@ -3,6 +3,8 @@ import {
   Inject,
   Injectable,
   Logger,
+  NotFoundException,
+  Response,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import slugify from 'slugify';
@@ -17,6 +19,7 @@ import {
   Brand,
   Category,
   Color,
+  Inventory,
   Product,
   ProductVariant,
   Size,
@@ -43,10 +46,27 @@ export class ProductService {
   private logger = new Logger('ProductService');
 
   // lấy tất cả sản phẩm
-  async getProducts(): Promise<Product[]> {
-    return Product.find({
-      relations: ['variants'],
+  async getProducts(
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<{
+    data: Product[];
+    total: number;
+  }> {
+    page = Number(page) || 1;
+    limit = Number(limit) || 10;
+    const [data, total] = await Product.findAndCount({
+      skip: (page - 1) * limit,
+      take: limit,
+      order: {
+        id: 'ASC', // tuỳ bạn có thể thêm sắp xếp
+      },
     });
+
+    return {
+      data,
+      total,
+    };
   }
 
   // lấy sản phẩm theo bộ lọc
@@ -83,6 +103,7 @@ export class ProductService {
       .leftJoinAndSelect('product.colors', 'colors')
       .leftJoinAndSelect('variants.color', 'color')
       .leftJoinAndSelect('variants.size', 'size')
+      .where('product.display = true')
       .orderBy('product.' + sort, order) //
       .take(limit) // Giới hạn số lượng sản phẩm trả về
       .skip(page * limit); // Bỏ qua số lượng sản phẩm đã hiển thị
@@ -115,7 +136,7 @@ export class ProductService {
 
     // Lấy kết quả và tổng số sản phẩm
 
-    this.logger.log(query.getQueryAndParameters()); // Log the query for debugging
+    // this.logger.log(query.getQueryAndParameters()); // Log the query for debugging
     const [data, total] = await query.getManyAndCount();
 
     return {
@@ -140,8 +161,29 @@ export class ProductService {
         'variants.size',
         'colors',
         'sizes',
+        // 'variants.inventory',
       ],
     });
+  }
+
+  async getProductWithInventory(productId: number) {
+    const product = await Product.findOne({
+      where: { id: productId },
+      relations: ['variants', 'brand', 'category', 'photos'], // các relations khác
+    });
+
+    if (!product) throw new NotFoundException('Product not found');
+
+    for (const variant of product.variants) {
+      const { sum } = await Inventory.createQueryBuilder('batch')
+        .select('SUM(batch.remainingQuantity)', 'sum')
+        .where('batch.variantId = :variantId', { variantId: variant.id })
+        .getRawOne();
+
+      variant['stockQuantity'] = Number(sum) || 0;
+    }
+
+    return product;
   }
 
   async getProductsByIds(ids: number[]): Promise<Product[]> {
@@ -216,7 +258,7 @@ export class ProductService {
           const productVariant = ProductVariant.create();
           productVariant.code =
             product.code + '-' + color.name + '-' + size.name;
-          productVariant.inventoryQuantity = 100; //todo:
+          // productVariant.inventoryQuantity = 100; //todo:
           // productVariant.save();
           productVariant.color = color;
           productVariant.size = size;
@@ -254,6 +296,23 @@ export class ProductService {
   // cập nhật thông tin sản phẩm
   async updateProductInfo(id: number, data: UpdateProdDto): Promise<string> {
     return (await Product.update(id, data)).raw;
+  }
+
+  // cập nhật giá sản phẩm
+  async updateProductPrice(id: number, originalPrice: number): Promise<string> {
+    if (originalPrice < 0) {
+      throw new BadRequestException('Original price must be greater than 0');
+    }
+    return (await Product.update(id, { originalPrice })).raw;
+  }
+
+  async updateDisplayStatus(
+    id: number,
+    displayStatus: boolean,
+  ): Promise<string> {
+    return Product.update(id, { display: displayStatus }).then(
+      (res) => res.raw,
+    );
   }
 
   // xóa sản phẩm

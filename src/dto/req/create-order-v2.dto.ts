@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
 import { OrderPaymentMethod } from 'src/common/enums';
 import { CartItemDto } from './cart-item.dto';
 import { Type } from 'class-transformer';
@@ -26,6 +26,7 @@ export class CreateOrderDtov2 {
   @IsEnum(OrderPaymentMethod)
   paymentMethod: OrderPaymentMethod;
 
+  @IsOptional()
   @ApiProperty({
     required: false,
   })
@@ -41,4 +42,25 @@ export class CreateOrderDtov2 {
   // @Type(() => CartItemDto)
   @IsNotEmpty()
   cart: CartItemDto[];
+
+  @ApiProperty({
+    required: false,
+    description: 'Optional note for the order',
+  })
+  @IsNotEmpty()
+  returnUrl: string;
+
+  @ApiProperty({
+    required: false,
+    description: 'district ID of the shipping origin',
+  })
+  @IsNotEmpty()
+  to_district_id: number;
+
+  @ApiProperty({
+    required: false,
+    description: 'ward code of the shipping origin',
+  })
+  @IsNotEmpty()
+  to_ward_code: string;
 }
