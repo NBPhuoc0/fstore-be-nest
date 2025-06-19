@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty } from 'class-validator';
+import { IsNotEmpty, IsOptional } from 'class-validator';
 import { VoucherType } from 'src/common/enums';
 
 export class CreateVoucherDto {
@@ -19,6 +19,13 @@ export class CreateVoucherDto {
   @IsNotEmpty()
   value: number;
 
+  @IsOptional()
+  @ApiProperty({
+    required: false,
+  })
+  fromValue?: number;
+
+  @IsOptional()
   @ApiProperty({
     required: false,
   })

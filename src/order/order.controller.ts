@@ -111,13 +111,12 @@ export class OrderController {
         res,
         shippingOrderdata,
       );
+      // send mail for order created
       this.eventEmitter.emit('order.submit', res);
       return res;
     } catch (error) {
       await this.orderService.deleteOrder(res);
     }
-
-    // send mail for order created
   }
 
   @Post('payoshook')

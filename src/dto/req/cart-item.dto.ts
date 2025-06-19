@@ -15,3 +15,13 @@ export class CartItemDto {
   @IsNotEmpty()
   quantity: number;
 }
+
+export class CartItemDtoMock {
+  @ApiProperty()
+  @IsNotEmpty()
+  variantId: number;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  quantity: number;
+}

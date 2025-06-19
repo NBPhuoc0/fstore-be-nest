@@ -36,6 +36,124 @@ export class OrderService {
 
   logger = new Logger(OrderService.name);
 
+  async completeOrderMock() {}
+
+  async createOrderMock(dto: CreateOrderDtov1): Promise<Order> {
+    const cart = dto.cart;
+
+    return await this.dataSource.transaction(async (manager) => {
+      const order = new Order();
+      let subTotal = 0;
+      let discount = 0;
+
+      order.name = dto.name;
+      order.email = dto.email;
+      order.address = dto.address;
+      order.phone = dto.phone;
+      order.paymentMethod = dto.paymentMethod;
+
+      const orderItems = await Promise.all(
+        cart.map(async (cartItem) => {
+          const orderItem = OrderItem.create();
+
+          const variant = await manager.findOne(ProductVariant, {
+            where: { id: cartItem.variantId },
+            relations: ['product'],
+          });
+          if (!variant)
+            throw new BadRequestException('Product variant not found');
+
+          orderItem.product = variant.product;
+          orderItem.productId = variant.productId;
+          orderItem.variantId = cartItem.variantId;
+          orderItem.quantity = cartItem.quantity;
+
+          if (variant.product.salePrice) {
+            discount +=
+              (variant.product.originalPrice - variant.product.salePrice) *
+              cartItem.quantity;
+          }
+          subTotal += variant.product.originalPrice * cartItem.quantity;
+
+          return orderItem;
+        }),
+      );
+
+      order.orderItems = orderItems;
+
+      if (dto.voucherId) {
+        const voucher = await manager.findOne(Voucher, {
+          where: { id: dto.voucherId },
+        });
+        if (!voucher) throw new BadRequestException('Voucher not found');
+        if (!voucher.status) {
+          throw new BadRequestException('Voucher is not active');
+        }
+        if (voucher.usedQuantity >= voucher.quantity) {
+          throw new BadRequestException('Voucher has been used up');
+        }
+
+        if (voucher.type === VoucherType.AMOUNT) {
+          discount += voucher.value;
+        } else if (voucher.type === VoucherType.PERCENT) {
+          discount += (subTotal * voucher.value) / 100;
+          if (voucher.maxDiscount) {
+            discount = Math.min(discount, voucher.maxDiscount);
+          }
+        }
+        this.logger.log(
+          `Applying voucher ${voucher.id} with discount: ${discount}`,
+        );
+
+        voucher.usedQuantity += 1;
+        voucher.budgetUsed += discount;
+        await manager.save(voucher);
+        order.voucherId = voucher.id;
+      }
+
+      // km shipping
+      if (subTotal > 500000) {
+        discount += 20000;
+      }
+
+      order.subTotal = subTotal;
+      order.discount = discount;
+      order.total = subTotal - discount;
+
+      if (dto.paymentMethod === 'COD') {
+        order.status = OrderStatus.PROCESSING;
+      }
+
+      order.createdAt = dto.createdAt;
+      order.status = OrderStatus.COMPLETED;
+      await manager.save(order);
+      const orderId = await manager.getId(order);
+
+      for (const item of orderItems) {
+        await manager.increment(
+          Product,
+          { id: item.productId },
+          'saleCount',
+          item.quantity,
+        );
+
+        await this.inventoryService.exportStock(
+          {
+            variantId: item.variantId,
+            productId: item.productId,
+            orderId: orderId,
+            quantity: item.quantity,
+            price: item.product.originalPrice,
+            note: `Sale: Order ID ${orderId}`,
+          },
+          manager,
+        );
+      }
+
+      return order;
+    });
+  }
+
   async createOrderv2(dto: CreateOrderDtov2): Promise<Order> {
     const cart = dto.cart;
 
@@ -93,6 +211,11 @@ export class OrderService {
         if (voucher.usedQuantity >= voucher.quantity) {
           throw new BadRequestException('Voucher has been used up');
         }
+        if (voucher.fromValue && subTotal < voucher.fromValue) {
+          throw new BadRequestException(
+            `Voucher requires minimum order value of ${voucher.fromValue}`,
+          );
+        }
 
         if (voucher.type === VoucherType.AMOUNT) {
           discount += voucher.value;
@@ -109,6 +232,7 @@ export class OrderService {
         voucher.usedQuantity += 1;
         voucher.budgetUsed += discount;
         await manager.save(voucher);
+        order.voucherId = voucher.id;
       }
 
       // km shipping
@@ -209,6 +333,8 @@ export class OrderService {
           `Cancelling order with ID ${id} and status ${order.status}`,
         );
         await this.inventoryService.returnGoodStock(id, manager);
+        order.returnReason = 'Order cancelled before completion';
+        // Update order status
         order.status = OrderStatus.CANCELLED;
         if (order.paymentMethod === OrderPaymentMethod.BANKING) {
           order.status = OrderStatus.WAITING_REFUND;
@@ -376,6 +502,13 @@ export class OrderService {
           'Order was not returned, cannot cancel return',
         );
       }
+
+      if (dto.reason) {
+        order.returnReason = dto.reason;
+      } else {
+        order.returnReason = 'Order cancelled by user';
+      }
+
       // await this.inventoryService.cancelReturnStock(order.id, manager);
       await this.inventoryService.returnBadStock(dto, manager);
 
@@ -490,8 +623,8 @@ export class OrderService {
   }
 
   async getOrdersByGroup(
-    year?: number,
-    month?: number,
+    year: number,
+    month: number,
   ): Promise<{
     fail: number;
     completed: number;
@@ -499,26 +632,17 @@ export class OrderService {
   }> {
     const qb = this.dataSource.createQueryBuilder(Order, 'order');
 
-    if (year && month) {
-      const startDate = new Date(year, month - 1, 1);
-      const endDate = new Date(year, month, 1);
-      qb.andWhere(
-        'order.createdAt >= :startDate AND order.createdAt < :endDate',
-        { startDate, endDate },
-      );
-    } else if (year) {
-      const startDate = new Date(year, 0, 1);
-      const endDate = new Date(year + 1, 0, 1);
-      qb.andWhere(
-        'order.createdAt >= :startDate AND order.createdAt < :endDate',
-        { startDate, endDate },
-      );
-    }
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 1);
 
     // Group theo status
     const raw = await qb
       .select('order.status', 'status')
       .addSelect('COUNT(order.id)', 'count')
+      .andWhere(
+        'order.createdAt >= :startDate AND order.createdAt < :endDate',
+        { startDate, endDate },
+      )
       .groupBy('order.status')
       .getRawMany();
 
@@ -533,11 +657,13 @@ export class OrderService {
 
     // Gom nhóm theo yêu cầu
     const fail = map[OrderStatus.CANCELLED] ?? 0;
-    const completed = map[(OrderStatus.COMPLETED, OrderStatus.EXCHANGED)] ?? 0;
+    const completed =
+      (map[OrderStatus.COMPLETED] ?? 0) + (map[OrderStatus.EXCHANGED] ?? 0);
     const total = raw.reduce((sum, row) => sum + Number(row.count), 0);
     const processing = total - fail - completed;
 
     return { fail, completed, processing };
+    // return map[OrderStatus.DELIVERING];
   }
 
   async getRevenueByMonthV1(
@@ -552,19 +678,24 @@ export class OrderService {
       .getRepository(Order)
       .createQueryBuilder('o')
       .select('DATE(o.createdAt)', 'date')
-      .addSelect('SUM(o.total)', 'totalRevenue')
-      .where('o.createdAt BETWEEN :startDate AND :endDate', {
+      .addSelect('SUM(o.total)', 'totalRevenue');
+
+    if (year && month) {
+      query.andWhere('o.createdAt BETWEEN :startDate AND :endDate', {
         startDate,
         endDate,
-      })
+      });
+    }
+
+    query
       .andWhere('o.status = :status', { status: OrderStatus.COMPLETED })
       .groupBy('DATE(o.createdAt)')
       .orderBy('date', 'ASC');
-    // Logger.log(
-    //   `Executing query to get sales statistics by category: ${query.getQuery()}`,
-    //   'OrderService',
-    // );
+
     const rawResult = await query.getRawMany();
+    this.logger.log(
+      `Executing query to get revenue by month: ${query.getQueryAndParameters()}`,
+    );
 
     return rawResult.map((item) => ({
       date: item.date,
@@ -579,17 +710,21 @@ export class OrderService {
     const query = this.dataSource
       .getRepository(OrderItem)
       .createQueryBuilder('oi')
-      .leftJoin('oi.order', 'order')
+      .leftJoin('oi.order', 'o')
 
       .leftJoinAndSelect('oi.product', 'product')
       .select('product.id', 'productId')
       .addSelect('product.name', 'productName')
-      .addSelect('SUM(oi.quantity)', 'totalSold')
-      .andWhere('order.createdAt BETWEEN :startDate AND :endDate', {
+      .addSelect('SUM(oi.quantity)', 'totalSold');
+    if (year && month) {
+      query.andWhere('o.createdAt BETWEEN :startDate AND :endDate', {
         startDate,
         endDate,
-      })
+      });
+    }
 
+    query
+      .andWhere('o.status = :status', { status: OrderStatus.COMPLETED })
       .groupBy('product.id')
       .addGroupBy('product.name')
       .orderBy('SUM(oi.quantity)', 'DESC')
@@ -619,11 +754,16 @@ export class OrderService {
       .select('category.id', 'categoryId')
       .addSelect('category.name', 'categoryName')
       .addSelect('SUM(oi.quantity)', 'totalQuantitySold')
-      .addSelect('SUM(oi.quantity * product.originalPrice)', 'totalRevenue')
-      .where('o.createdAt BETWEEN :startDate AND :endDate', {
+      .addSelect('SUM(oi.quantity * product.originalPrice)', 'totalRevenue');
+    if (year && month) {
+      query.andWhere('o.createdAt BETWEEN :startDate AND :endDate', {
         startDate,
         endDate,
-      })
+      });
+    }
+
+    query
+      .andWhere('o.status = :status', { status: OrderStatus.COMPLETED })
       .groupBy('category.id')
       .addGroupBy('category.name');
     // Logger.log(

@@ -22,7 +22,7 @@ export class ImportBatch extends BaseEntity {
   @Column({ nullable: true })
   note: string;
 
-  @Column({ name: 'total_cost', type: 'decimal', nullable: true })
+  @Column({ name: 'total_cost', type: 'decimal', nullable: true, default: 0 })
   totalCost: number;
 
   @Column({ type: 'decimal', nullable: true, name: 'incidental_costs' })

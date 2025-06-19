@@ -18,6 +18,7 @@ import {
   BadRequestException,
   Res,
   Sse,
+  MessageEvent,
 } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { ProductService } from 'src/product/services/product.service';
@@ -61,11 +62,19 @@ export class AdminController {
   ) {}
 
   private logger = new Logger('AdminController');
-  //* test auth
-  @Get('test')
-  @ApiBearerAuth('Authorization')
-  async test(@Req() req) {
-    return req.user;
+  //* admin stuff
+  @ApiTags('Admin')
+  @Get('mock/orders')
+  async mockOrders() {
+    const mockOrders = await this.adminService.generateMockOrders(50);
+    let i = 1;
+    for (const order of mockOrders) {
+      const createdOrder = await this.orderService.createOrderMock(order);
+      this.logger.log(
+        `${i++} Mock order created with ID: ${createdOrder.id}, Name: ${createdOrder.name}`,
+      );
+    }
+    return;
   }
 
   //* Brand...
@@ -383,7 +392,7 @@ export class AdminController {
   @ApiTags('Order')
   @Sse('orders/stream')
   streamOrders(): Observable<MessageEvent> {
-    return fromEvent(this.eventEmitter, 'order.test').pipe(
+    return fromEvent(this.eventEmitter, 'order.submit').pipe(
       map((order) => {
         return { data: order } as MessageEvent;
       }),
@@ -498,9 +507,15 @@ export class AdminController {
   }
 
   @ApiTags('Inventory')
+  @Get('inventory/low-stock')
+  getLowStock() {
+    return this.inventoryService.getLowStockProducts();
+  }
+
+  @ApiTags('Inventory')
   @Get('inventory/import-batch/:id')
   getImportBatchDetail(@Param('id') id: number) {
-    return this.inventoryService.getImportBatchDetail(id);
+    return this.inventoryService.getBatchRevenueSummary(id);
   }
 
   @ApiTags('Inventory')
@@ -510,10 +525,10 @@ export class AdminController {
     @UploadedFile() file: Express.Multer.File,
     @Body() dto: ImportBatchDto,
   ) {
-    this.logger.log(
-      `Importing inventory from Excel file: ${file.originalname} with data: ${JSON.stringify(dto)}`,
-    );
-    return;
+    // this.logger.log(
+    //   `Importing inventory from Excel file: ${file.originalname} with data: ${JSON.stringify(dto)}`,
+    // );
+    // return;
     const data = await this.inventoryService.extractFromExcel(file);
 
     return this.inventoryService.createImportBatch({
@@ -528,21 +543,18 @@ export class AdminController {
   }
 
   @ApiTags('Inventory')
-  @Post('inventory/adjust')
-  adjust(
-    @Body()
-    dto: InventoryActionDto,
-  ) {
-    // return this.inventoryService.adjustStock(dto);
-  }
-
-  @ApiTags('Inventory')
   @UseInterceptors(FileInterceptor('file'))
   @Post('inventory/adjust/bulk')
   async adjustExcel(
     @UploadedFile() file: Express.Multer.File,
     @Body() dto: { note?: string },
   ) {
+    const data = await this.inventoryService.extractFromExcel(file);
+
+    return this.inventoryService.bulkAjust({
+      data: data,
+      note: dto.note,
+    });
     // return this.inventoryService.extractFromExcel(
     //   file,
     //   InventoryTransactionType.ADJUST,
@@ -555,8 +567,8 @@ export class AdminController {
   @Get('dashboard/monthly-revenue')
   async getDashboardData(@Query('y') y: string, @Query('m') m: string) {
     // return this.adminService.getDashboardData();
-    // return this.orderService.getRevenueByMonth(+y, +m);
-    return this.inventoryService.getDailyRevenueByMonth(+y, +m);
+    return this.orderService.getRevenueByMonthV1(+y, +m);
+    // return this.inventoryService.getDailyRevenueByMonth(+y, +m);
     // return revenue;
   }
 
@@ -573,6 +585,16 @@ export class AdminController {
   }
 
   // ticket
+  @ApiTags('Ticket')
+  @Sse('tickets/stream')
+  streamTickets(): Observable<MessageEvent> {
+    return fromEvent(this.eventEmitter, 'ticket.created').pipe(
+      map((ticket) => {
+        return { data: ticket } as MessageEvent;
+      }),
+    );
+  }
+
   @ApiTags('Ticket')
   @Get('tickets')
   async getAllTickets() {

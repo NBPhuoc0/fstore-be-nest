@@ -6,6 +6,8 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import e from 'express';
+import { OrderStatus } from 'src/common/enums';
 import {
   ImportBatchDto,
   InventoryActionDto,
@@ -44,11 +46,14 @@ export class InventoryService {
   logger = new Logger(InventoryService.name);
 
   async getStockByVariant(variantId: number): Promise<Inventory[] | null> {
-    const records = await this.inventoryRepo.find({
-      where: { variantId },
-      order: { createdAt: 'DESC' },
-    });
-    return records;
+    const qr = this.dataSource.createQueryBuilder();
+    qr.select('inv.*', 'inventory');
+    qr.addSelect('batch.note', 'note');
+    qr.from(Inventory, 'inv');
+    qr.leftJoin(ImportBatch, 'batch', 'inv.importBatchId = batch.id');
+    qr.where('inv.variantId = :variantId', { variantId });
+
+    return qr.getRawMany();
   }
 
   async getStockByProduct(productId: number): Promise<Inventory[] | null> {
@@ -212,8 +217,8 @@ export class InventoryService {
     }
   }
 
-  async adjustStock(dto: InventoryActionDto, manager: EntityManager) {
-    const inventory = await manager.findOne(Inventory, {
+  async adjustStock(dto: InventoryActionDto) {
+    const inventory = await this.inventoryRepo.findOne({
       where: { id: dto.inventoryId },
     });
 
@@ -222,7 +227,7 @@ export class InventoryService {
     }
 
     inventory.remainingQuantity += dto.quantity;
-    await manager.save(inventory);
+    await this.inventoryRepo.save(inventory);
   }
 
   async exchangeStock(
@@ -272,58 +277,104 @@ export class InventoryService {
     }
   }
 
-  async bulkAction(dto: InventoryBulkDto, type: InventoryTransactionType) {
+  // async bulkAction(dto: InventoryBulkDto, type: InventoryTransactionType) {
+  //   await this.dataSource.transaction(async (manager) => {
+  //     for (const item of dto.data) {
+  //       let inventory = await manager.findOne(Inventory, {
+  //         where: {
+  //           id: item.inventoryId,
+  //           variantId: item.variantId,
+  //           productId: item.productId,
+  //         },
+  //       });
+
+  //       if (!inventory) {
+  //         if (
+  //           type == InventoryTransactionType.ADJUST ||
+  //           type == InventoryTransactionType.RETURN
+  //         ) {
+  //           throw new NotFoundException(
+  //             `Inventory ${item.inventoryId} not found`,
+  //           );
+  //         }
+  //         inventory = manager.create(Inventory, {
+  //           variantId: item.variantId,
+  //           productId: item.productId,
+  //           stockQuantity: 0,
+  //         });
+  //         await manager.save(inventory);
+  //       }
+
+  //       // Ghi log transaction
+  //       const transaction = manager.create(InventoryTransaction, {
+  //         variantId: item.variantId,
+  //         productId: item.productId,
+  //         transactionType: type,
+  //         quantity: item.quantity,
+  //         price: item.price,
+  //         note: dto.note,
+  //       });
+
+  //       manager.save(transaction);
+  //       // Thực hiện update tồn kho
+  //       if (type === InventoryTransactionType.EXPORT) {
+  //         if (inventory.remainingQuantity < item.quantity)
+  //           throw new BadRequestException();
+  //         inventory.remainingQuantity -= item.quantity;
+  //       } else {
+  //         inventory.remainingQuantity += item.quantity;
+  //       }
+
+  //       manager.save(inventory);
+  //     }
+  //   });
+  // }
+
+  async bulkAjust(dto: InventoryBulkDto) {
     await this.dataSource.transaction(async (manager) => {
       for (const item of dto.data) {
-        const variant = await manager.findOne(ProductVariant, {
-          where: { id: item.variantId },
-        });
-
-        if (!variant) {
-          throw new BadRequestException(`Variant ${item.variantId} not found`);
-        }
-
-        let inventory = await manager.findOne(Inventory, {
-          where: { variantId: item.variantId },
+        const inventory = await manager.findOne(Inventory, {
+          where: {
+            id: item.inventoryId,
+            variantId: item.variantId,
+            productId: item.productId,
+          },
         });
 
         if (!inventory) {
-          inventory = manager.create(Inventory, {
-            variantId: item.variantId,
-            productId: variant.productId,
-            stockQuantity: 0,
-          });
-          await manager.save(inventory);
+          throw new NotFoundException(
+            `Inventory ${item.inventoryId} not found`,
+          );
         }
 
         // Ghi log transaction
-        const transaction = this.transactionRepo.create({
+        const transaction = manager.create(InventoryTransaction, {
           variantId: item.variantId,
-          productId: variant.productId,
-          transactionType: type,
+          productId: item.productId,
+          transactionType: InventoryTransactionType.ADJUST,
           quantity: item.quantity,
           price: item.price,
           note: dto.note,
         });
 
-        manager.save(transaction);
-        // Thực hiện update tồn kho
-        if (type === InventoryTransactionType.EXPORT) {
-          if (inventory.remainingQuantity < item.quantity)
-            throw new BadRequestException();
-          inventory.remainingQuantity -= item.quantity;
-        } else {
-          inventory.remainingQuantity += item.quantity;
-        }
+        await manager.save(transaction);
 
-        manager.save(inventory);
+        // Thực hiện update tồn kho
+        inventory.remainingQuantity += item.quantity;
+        await manager.save(inventory);
       }
     });
   }
 
   async createImportBatch(dto: ImportBatchDto) {
     await this.dataSource.transaction(async (manager) => {
-      const importBatch = await manager.save(ImportBatch, dto);
+      const importBatch = manager.create(ImportBatch, {
+        supplierName: dto.supplierName,
+        note: dto.note,
+        incidentalCosts: dto.incidentalCosts || 0,
+        createdBy: dto.createdBy,
+      });
+      await manager.save(importBatch);
 
       let totalCost = 0;
       if (dto.incidentalCosts) {
@@ -364,21 +415,36 @@ export class InventoryService {
 
         totalCost += item.quantity * (item.price || 0);
       }
+
+      importBatch.totalCost += totalCost;
+      await manager.save(importBatch);
     });
   }
 
   async extractFromExcel(
     file: Express.Multer.File,
+    adjust: boolean = false,
   ): Promise<InventoryActionDto[]> {
     const workbook = XLSX.read(file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     const jsonData: InventoryActionDto[] = XLSX.utils.sheet_to_json(worksheet);
+    let invalidRows = [];
+    if (adjust) {
+      invalidRows = jsonData.filter(
+        (item) =>
+          !item.inventoryId ||
+          !item.variantId ||
+          !item.productId ||
+          !item.quantity,
+      );
+    } else {
+      invalidRows = jsonData.filter(
+        (item) =>
+          !item.variantId || !item.productId || !item.quantity || !item.price,
+      );
+    }
 
-    const invalidRows = jsonData.filter(
-      (item) =>
-        !item.variantId || !item.productId || !item.quantity || !item.price,
-    );
     if (invalidRows.length > 0) {
       throw new BadRequestException(
         'File import thiếu thông tin ở một số dòng',
@@ -428,25 +494,147 @@ export class InventoryService {
     }));
   }
 
-  async getLowStockProductsByProduct(threshold: number = 10) {
-    const query = this.dataSource
-      .getRepository(Inventory)
-      .createQueryBuilder('batch')
-      .leftJoin(Product, 'product', 'product.id = batch.productId')
-      .select('batch.productId', 'productId')
-      .addSelect('product.name', 'productName')
-      .addSelect('SUM(batch.remainingQuantity)', 'totalStock')
-      .groupBy('batch.productId')
-      .addGroupBy('product.name')
-      .having('SUM(batch.remainingQuantity) <= :threshold', { threshold })
-      .orderBy('totalStock', 'ASC');
+  async getLowStockProducts(threshold = 10) {
+    const result = await this.dataSource
+      .getRepository(Product)
+      .createQueryBuilder('p')
+      .leftJoin('product_variants', 'v', 'v.product_id = p.id')
+      .leftJoin('inventories', 'i', 'i.variant_id = v.id')
+      .select('p.id', 'productId')
+      .addSelect('p.name', 'productName')
+      .addSelect('COALESCE(SUM(i.remain_quantity), 0)', 'totalQuantity')
+      .groupBy('p.id')
+      .addGroupBy('p.name')
+      .having('COALESCE(SUM(i.remain_quantity), 0) < :threshold', {
+        threshold,
+      })
+      .orderBy('p.id', 'ASC')
+      .getRawMany();
 
-    const raw = await query.getRawMany();
-
-    return raw.map((item) => ({
-      productId: item.productId,
-      productName: item.productName,
-      totalStock: Number(item.totalStock),
+    return result.map((r) => ({
+      productId: +r.productId,
+      name: r.productName,
+      totalQuantity: +r.totalQuantity,
     }));
+  }
+
+  async getBatchDetailWithRevenueV1(batchId: number) {
+    // Lấy thông tin batch
+    const batch = await this.importBatchRepo.findOne({
+      where: { id: batchId },
+    });
+    if (!batch) throw new NotFoundException('Batch not found');
+
+    // Lấy tất cả transaction export của batch này
+    const exportTransactions = await this.transactionRepo.find({
+      where: {
+        importBatchId: batchId,
+        transactionType: InventoryTransactionType.EXPORT,
+      },
+    });
+
+    if (exportTransactions.length === 0) {
+      return {
+        batch,
+        actualRevenue: 0,
+        expectedRevenue: 0,
+        exportTransactions: [],
+      };
+    }
+
+    // Lấy danh sách orderId liên quan
+    const orderIds = exportTransactions
+      .map((trx) => trx.orderId)
+      .filter((id) => !!id);
+
+    let orders: Order[] = [];
+    if (orderIds.length > 0) {
+      orders = await this.dataSource
+        .getRepository(Order)
+        .findBy({ id: In(orderIds) });
+    }
+
+    // Map orderId -> status
+    const orderStatusMap = new Map<number, OrderStatus>();
+    for (const order of orders) {
+      orderStatusMap.set(order.id, order.status);
+    }
+
+    // Tính doanh thu thực và dự kiến
+    let actualRevenue = 0;
+    let expectedRevenue = 0;
+
+    for (const trx of exportTransactions) {
+      const status = orderStatusMap.get(trx.orderId);
+      const revenue = Number(trx.quantity) * Number(trx.price || 0);
+
+      if (
+        status === OrderStatus.CANCELLED ||
+        status === OrderStatus.EXCHANGED
+      ) {
+        actualRevenue += revenue;
+      } else {
+        expectedRevenue += revenue;
+      }
+    }
+
+    return {
+      batch,
+      actualRevenue,
+      expectedRevenue,
+      exportTransactions,
+    };
+  }
+
+  async getBatchRevenueSummary(batchId: number) {
+    // 1. Lấy thông tin batch
+    const batch = await this.dataSource
+      .getRepository(ImportBatch)
+      .findOne({ where: { id: batchId } });
+
+    if (!batch) throw new NotFoundException('Batch not found');
+
+    const completedStatuses = ['COMPLETED', 'EXCHANGE'];
+
+    // 2. Doanh thu thực tế
+    const realRevenueRaw = await this.dataSource
+      .getRepository(InventoryTransaction)
+      .createQueryBuilder('t')
+      .leftJoin(Order, 'o', 'o.id = t.orderId')
+      .select('SUM(t.price * t.quantity)', 'realRevenue')
+      .where('t.importBatchId = :batchId', { batchId })
+      .andWhere('t.transactionType = :type', { type: 'EXPORT' })
+      .andWhere('o.status IN (:...statuses)', { statuses: completedStatuses })
+      .getRawOne();
+
+    // 3. Doanh thu dự kiến
+    const expectedRevenueRaw = await this.dataSource
+      .getRepository(InventoryTransaction)
+      .createQueryBuilder('t')
+      .leftJoin(Order, 'o', 'o.id = t.orderId')
+      .select('SUM(t.price * t.quantity)', 'expectedRevenue')
+      .where('t.importBatchId = :batchId', { batchId })
+      .andWhere('t.transactionType = :type', { type: 'EXPORT' })
+      .andWhere('o.status NOT IN (:...statuses)', {
+        statuses: [...completedStatuses, 'CANCELLED'],
+      })
+      .getRawOne();
+
+    // 4. Tổng hàng đã nhập + còn lại
+    const inventoryRaw = await this.dataSource
+      .getRepository(Inventory)
+      .createQueryBuilder('i')
+      .select('SUM(i.quantity)', 'totalImported')
+      .addSelect('SUM(i.remainingQuantity)', 'totalRemaining')
+      .where('i.importBatchId = :batchId', { batchId })
+      .getRawOne();
+
+    return {
+      batch,
+      realRevenue: Number(realRevenueRaw.realRevenue) || 0,
+      expectedRevenue: Number(expectedRevenueRaw.expectedRevenue) || 0,
+      totalImported: Number(inventoryRaw.totalImported) || 0,
+      totalRemaining: Number(inventoryRaw.totalRemaining) || 0,
+    };
   }
 }

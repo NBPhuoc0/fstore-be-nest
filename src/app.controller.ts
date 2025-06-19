@@ -18,6 +18,7 @@ import { Order, Product } from './entities';
 import { TicketService } from './order/services/ticket.service';
 import { CreateTicketDto } from './dto/req/create-ticket.dto';
 import { PromotionService } from './promotion/promotion.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Controller()
 export class AppController {
@@ -27,6 +28,7 @@ export class AppController {
     private readonly productService: ProductService,
     private readonly ticketService: TicketService,
     private readonly promotionService: PromotionService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   @Get()
@@ -76,6 +78,8 @@ export class AppController {
   @Post('ticket')
   async createTicket(@Body() dto: CreateTicketDto) {
     // return dto;
-    return await this.ticketService.createTicket(dto);
+    const ticket = await this.ticketService.createTicket(dto);
+    this.eventEmitter.emit('ticket.created', ticket);
+    return ticket;
   }
 }

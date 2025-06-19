@@ -18,6 +18,7 @@ export class ImportBatchDto {
   supplierName?: string;
 
   @ApiProperty()
+  @IsNotEmpty()
   note?: string;
 
   @ApiProperty()

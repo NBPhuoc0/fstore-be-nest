@@ -33,6 +33,9 @@ export class Voucher extends BaseEntity {
   maxDiscount: number;
 
   @Column({ nullable: true })
+  fromValue: number;
+
+  @Column({ nullable: true })
   image: string;
 
   @Column({ nullable: false })
