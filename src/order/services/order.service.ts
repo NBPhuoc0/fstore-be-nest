@@ -467,35 +467,36 @@ export class OrderService {
     await this.dataSource.transaction(async (manager) => {
       const order = await manager.findOne(Order, {
         where: { id: dto.orderId },
+        relations: ['orderItems'],
       });
 
       if (!order) {
         throw new BadRequestException('Order not found');
       }
 
-      if (order.orderItems.length != dto.items.length) {
-        throw new BadRequestException('Invalid return items');
-      }
+      // if (order.orderItems.length != dto.items.length) {
+      //   throw new BadRequestException('Invalid return items');
+      // }
 
-      const orderItemMap = new Map<number, OrderItem>();
-      for (const orderItem of order.orderItems) {
-        orderItemMap.set(orderItem.variantId, orderItem);
-      }
+      // const orderItemMap = new Map<number, OrderItem>();
+      // for (const orderItem of order.orderItems) {
+      //   orderItemMap.set(orderItem.variantId, orderItem);
+      // }
 
-      for (const item of dto.items) {
-        const orderItem = orderItemMap.get(item.variantId);
-        if (!orderItem) {
-          throw new BadRequestException(
-            `Variant ID ${item.variantId} not found in original order`,
-          );
-        }
+      // for (const item of dto.items) {
+      //   const orderItem = orderItemMap.get(item.variantId);
+      //   if (!orderItem) {
+      //     throw new BadRequestException(
+      //       `Variant ID ${item.variantId} not found in original order`,
+      //     );
+      //   }
 
-        if (item.quantity != orderItem.quantity) {
-          throw new BadRequestException(
-            `Return quantity for variant ID ${item.variantId} does not match purchased quantity`,
-          );
-        }
-      }
+      //   if (item.quantity != orderItem.quantity) {
+      //     throw new BadRequestException(
+      //       `Return quantity for variant ID ${item.variantId} does not match purchased quantity`,
+      //     );
+      //   }
+      // }
 
       if (order.status !== OrderStatus.RETURNED) {
         throw new BadRequestException(
@@ -510,7 +511,7 @@ export class OrderService {
       }
 
       // await this.inventoryService.cancelReturnStock(order.id, manager);
-      await this.inventoryService.returnBadStock(dto, manager);
+      await this.inventoryService.returnBadStock(order, manager);
 
       if (order.voucherId) {
         const voucher = await manager.findOne(Voucher, {
@@ -667,30 +668,28 @@ export class OrderService {
   }
 
   async getRevenueByMonthV1(
-    year: number,
-    month: number,
+    year?: number,
+    month?: number,
   ): Promise<DailyRevenue[]> {
     // Xác định khoảng thời gian của tháng
-    const startDate = startOfMonth(new Date(year, month - 1, 1));
-    const endDate = endOfMonth(new Date(year, month - 1, 1));
 
     const query = this.dataSource
       .getRepository(Order)
       .createQueryBuilder('o')
       .select('DATE(o.createdAt)', 'date')
-      .addSelect('SUM(o.total)', 'totalRevenue');
+      .addSelect('SUM(o.total)', 'totalRevenue')
+      .andWhere('o.status = :status', { status: OrderStatus.COMPLETED })
+      .groupBy('DATE(o.createdAt)')
+      .orderBy('date', 'ASC');
 
     if (year && month) {
+      const startDate = startOfMonth(new Date(year, month - 1, 1));
+      const endDate = endOfMonth(new Date(year, month - 1, 1));
       query.andWhere('o.createdAt BETWEEN :startDate AND :endDate', {
         startDate,
         endDate,
       });
     }
-
-    query
-      .andWhere('o.status = :status', { status: OrderStatus.COMPLETED })
-      .groupBy('DATE(o.createdAt)')
-      .orderBy('date', 'ASC');
 
     const rawResult = await query.getRawMany();
     this.logger.log(
@@ -704,31 +703,28 @@ export class OrderService {
   }
 
   async getTopSellingProducts(year: number, month: number) {
-    const startDate = startOfMonth(new Date(year, month - 1, 1));
-    const endDate = endOfMonth(new Date(year, month - 1, 1));
-
     const query = this.dataSource
       .getRepository(OrderItem)
       .createQueryBuilder('oi')
       .leftJoin('oi.order', 'o')
-
       .leftJoinAndSelect('oi.product', 'product')
       .select('product.id', 'productId')
       .addSelect('product.name', 'productName')
-      .addSelect('SUM(oi.quantity)', 'totalSold');
-    if (year && month) {
-      query.andWhere('o.createdAt BETWEEN :startDate AND :endDate', {
-        startDate,
-        endDate,
-      });
-    }
-
-    query
+      .addSelect('SUM(oi.quantity)', 'totalSold')
       .andWhere('o.status = :status', { status: OrderStatus.COMPLETED })
       .groupBy('product.id')
       .addGroupBy('product.name')
       .orderBy('SUM(oi.quantity)', 'DESC')
       .limit(10);
+
+    if (year && month) {
+      const startDate = startOfMonth(new Date(year, month - 1, 1));
+      const endDate = endOfMonth(new Date(year, month - 1, 1));
+      query.andWhere('o.createdAt BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      });
+    }
 
     // Logger.log(`${query.getQuery()}`, 'OrderService');
     const raw = await query.getRawMany();
@@ -740,11 +736,8 @@ export class OrderService {
     }));
   }
 
-  async getSalesStatisticsByCategory(year: number, month: number) {
+  async getSalesStatisticsByCategory(year?: number, month?: number) {
     // Xác định khoảng thời gian của tháng
-    const startDate = startOfMonth(new Date(year, month - 1, 1));
-    const endDate = endOfMonth(new Date(year, month - 1, 1));
-
     const query = this.dataSource
       .getRepository(OrderItem)
       .createQueryBuilder('oi')
@@ -756,6 +749,8 @@ export class OrderService {
       .addSelect('SUM(oi.quantity)', 'totalQuantitySold')
       .addSelect('SUM(oi.quantity * product.originalPrice)', 'totalRevenue');
     if (year && month) {
+      const startDate = startOfMonth(new Date(year, month - 1, 1));
+      const endDate = endOfMonth(new Date(year, month - 1, 1));
       query.andWhere('o.createdAt BETWEEN :startDate AND :endDate', {
         startDate,
         endDate,
@@ -774,5 +769,53 @@ export class OrderService {
     const result = await query.getRawMany();
 
     return result;
+  }
+
+  async countSuccessAndFailedOrders(
+    year?: number,
+    month?: number,
+  ): Promise<{
+    success: number;
+    fail: number;
+  }> {
+    const successStatuses = ['COMPLETED', 'EXCHANGE'];
+    const failStatuses = ['CANCELLED'];
+
+    const qb = this.dataSource
+      .getRepository(Order)
+      .createQueryBuilder('o')
+      .select('o.status', 'status')
+      .addSelect('COUNT(*)', 'count')
+      .where('o.status IN (:...statuses)', {
+        statuses: [...successStatuses, ...failStatuses],
+      })
+      .groupBy('o.status');
+
+    if (year && month) {
+      const startDate = startOfMonth(new Date(year, month - 1, 1));
+      const endDate = endOfMonth(new Date(year, month - 1, 1));
+      qb.andWhere('o.createdAt BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      });
+    }
+
+    const raw = await qb.getRawMany();
+
+    const statusCount = raw.reduce(
+      (acc, row) => {
+        const status = row.status;
+        const count = Number(row.count);
+        if (successStatuses.includes(status)) {
+          acc.success += count;
+        } else if (failStatuses.includes(status)) {
+          acc.fail += count;
+        }
+        return acc;
+      },
+      { success: 0, fail: 0 },
+    );
+
+    return statusCount;
   }
 }

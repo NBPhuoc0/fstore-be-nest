@@ -7,6 +7,7 @@ import { ProductService } from 'src/product/services/product.service';
 import { v4 } from 'uuid';
 import { FashionBotPolicy } from './prompts';
 import { ChatSession, suggestPayload } from 'src/common/types';
+import { Product } from 'src/entities';
 
 @Injectable()
 export class ChatService {
@@ -83,6 +84,39 @@ export class ChatService {
       });
     }
 
+    return await this.vertorStoreService.upsertVector(points);
+  }
+
+  async upsertData(product: Product) {
+    const points: {
+      id: string;
+      vector: number[];
+      payload: suggestPayload;
+    }[] = [];
+    const embedText =
+      product.name +
+      ' ' +
+      product.category.name +
+      ' ' +
+      product.colors.map((color) => {
+        return color.name + ' ';
+      });
+    Logger.log(embedText, 'ChatService');
+    const embedding = await this.embeddingService.getEmbedding(embedText);
+    points.push({
+      id: v4(),
+      vector: embedding,
+      payload: {
+        id: product.id,
+        name: product.name,
+        //   description: product.metaDesc,
+        price: product.originalPrice,
+        category: product.category.name,
+        brand: product.brand.name,
+        color: product.colors.map((color) => color.name),
+        size: product.sizes.map((size) => size.name),
+      },
+    });
     return await this.vertorStoreService.upsertVector(points);
   }
 

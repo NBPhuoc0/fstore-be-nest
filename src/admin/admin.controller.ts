@@ -549,9 +549,9 @@ export class AdminController {
     @UploadedFile() file: Express.Multer.File,
     @Body() dto: { note?: string },
   ) {
-    const data = await this.inventoryService.extractFromExcel(file);
+    const data = await this.inventoryService.extractFromExcel(file, true);
 
-    return this.inventoryService.bulkAjust({
+    return this.inventoryService.bulkAdjust({
       data: data,
       note: dto.note,
     });
@@ -582,6 +582,16 @@ export class AdminController {
   @Get('dashboard/top-categories')
   async getTopCategories(@Query('y') y: string, @Query('m') m: string) {
     return this.orderService.getSalesStatisticsByCategory(+y, +m);
+  }
+
+  @ApiTags('Dashboard')
+  @Get('dashboard/count-orders')
+  async getTopCustomers(
+    @Query('y') y: string,
+    @Query('m')
+    m: string,
+  ) {
+    return this.orderService.countSuccessAndFailedOrders(+y, +m);
   }
 
   // ticket

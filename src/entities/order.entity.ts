@@ -72,10 +72,6 @@ export class Order extends BaseEntity {
   // @Column({ nullable: false, name: 'user_id' })
   // userId: number;
 
-  @ManyToOne(() => Voucher, { nullable: true })
-  @JoinColumn({ name: 'voucher_id' })
-  voucher: Voucher;
-
   @Column({ nullable: true, name: 'voucher_id' })
   voucherId: number;
 

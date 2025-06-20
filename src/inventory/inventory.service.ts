@@ -263,8 +263,8 @@ export class InventoryService {
     }
   }
 
-  async returnBadStock(dto: ReturnOrderDto, manager: EntityManager) {
-    for (const item of dto.items) {
+  async returnBadStock(order: Order, manager: EntityManager) {
+    for (const item of order.orderItems) {
       await manager.save(InventoryTransaction, {
         variantId: item.variantId,
         productId: item.productId,
@@ -272,7 +272,7 @@ export class InventoryService {
         transactionType: InventoryTransactionType.RETURN,
         quantity: item.quantity,
         price: 0,
-        note: `Return from Order ${dto.orderId}`,
+        note: `Return from Order ${order.id}`,
       });
     }
   }
@@ -330,7 +330,7 @@ export class InventoryService {
   //   });
   // }
 
-  async bulkAjust(dto: InventoryBulkDto) {
+  async bulkAdjust(dto: InventoryBulkDto) {
     await this.dataSource.transaction(async (manager) => {
       for (const item of dto.data) {
         const inventory = await manager.findOne(Inventory, {

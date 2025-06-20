@@ -114,7 +114,9 @@ export class PromotionService {
   //**Voucher */
   // lấy tất cả voucher
   async getVouchers() {
-    return Voucher.find();
+    return Voucher.find({
+      where: { status: true },
+    });
   }
 
   // lấy thông tin voucher theo id
