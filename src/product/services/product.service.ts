@@ -1,31 +1,17 @@
 import {
   BadRequestException,
-  Inject,
   Injectable,
   Logger,
   NotFoundException,
-  Response,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import slugify from 'slugify';
 import { S3ClientService } from 'src/common/services/s3-client.service';
-import { createBrandDto } from 'src/dto/req/create-brand.dto';
-import { createColorDto } from 'src/dto/req/create-color.dto';
 import { CreateProdDto } from 'src/dto/req/create-prod.dto';
-import { createSizeDto } from 'src/dto/req/create-size.dto';
 import { UpdateProdDto } from 'src/dto/req/update-prod.dto';
 import { PaginatedResponse } from 'src/dto/res/paginated-response.dto';
-import {
-  Brand,
-  Category,
-  Color,
-  Inventory,
-  Product,
-  ProductVariant,
-  Size,
-} from 'src/entities';
+import { Color, Inventory, Product, ProductVariant, Size } from 'src/entities';
 import { Photo } from 'src/entities/photo.entity';
-import { DataSource, In, Repository } from 'typeorm';
+import { DataSource, In } from 'typeorm';
 import { ProductUtilsService } from './product-utils.service';
 
 @Injectable()
@@ -45,7 +31,7 @@ export class ProductService {
   }
   private logger = new Logger('ProductService');
 
-  // lấy tất cả sản phẩm
+  // lấy tất cả sản phẩm theo phân trang
   async getProducts(
     page: number = 1,
     limit: number = 10,
@@ -67,6 +53,25 @@ export class ProductService {
       data,
       total,
     };
+  }
+
+  // lấy tất cả sản phẩm
+  async getAllProducts(): Promise<Product[]> {
+    return Product.find({
+      relations: [
+        'category',
+        'brand',
+        'photos',
+        'variants',
+        'variants.color',
+        'variants.size',
+        'colors',
+        'sizes',
+      ],
+      order: {
+        id: 'ASC',
+      },
+    });
   }
 
   // lấy sản phẩm theo bộ lọc

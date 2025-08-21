@@ -1,13 +1,13 @@
 import { GoogleGenAI } from '@google/genai';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { VectorStoreService } from './vector-db.service';
-import { EmbeddingService } from './embedding.service';
-import { ProductService } from 'src/product/services/product.service';
-import { v4 } from 'uuid';
-import { FashionBotPolicy } from './prompts';
 import { ChatSession, suggestPayload } from 'src/common/types';
 import { Product } from 'src/entities';
+import { ProductService } from 'src/product/services/product.service';
+import { v4 } from 'uuid';
+import { EmbeddingService } from './embedding.service';
+import { FashionBotPolicy } from './prompts';
+import { VectorStoreService } from './vector-db.service';
 
 @Injectable()
 export class ChatService {
@@ -50,7 +50,7 @@ export class ChatService {
   async importDatatoVectorStore() {
     await this.vertorStoreService.createCollection();
 
-    const { data: products, total } = await this.productService.getProducts();
+    const products = await this.productService.getAllProducts();
     const points: {
       id: string;
       vector: number[];
