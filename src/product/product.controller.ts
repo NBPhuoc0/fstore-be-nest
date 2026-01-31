@@ -1,29 +1,14 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Logger,
-  Param,
-  Post,
-  Query,
-} from '@nestjs/common';
-import { ProductService } from './services/product.service';
-import { CacheService } from 'src/common/services/cache.service';
-import { json } from 'express';
+import { Controller, Get, Logger, Param, Query } from '@nestjs/common';
 import { PaginatedResponse } from 'src/dto/res/paginated-response.dto';
 import { Product } from 'src/entities';
-import { CachePatterns } from 'src/common/enums';
 import { ProductUtilsService } from './services/product-utils.service';
-import { VectorStoreService } from 'src/chatbot/vector-db.service';
-import { EmbeddingService } from 'src/chatbot/embedding.service';
-import { ChatService } from 'src/chatbot/chat.service';
+import { ProductService } from './services/product.service';
 
 @Controller('product')
 export class ProductController {
   private logger = new Logger('ProductController');
   constructor(
     private readonly productService: ProductService,
-    private readonly cacheService: CacheService,
     private readonly productUtilsService: ProductUtilsService, // Assuming this is the correct service for product utils
   ) {}
 
@@ -56,29 +41,29 @@ export class ProductController {
 
   @Get('/:id')
   async findOneProduct(@Param('id') id: number) {
-    await this.cacheService.set(
-      'product-get',
-      id,
-      CachePatterns.ProductViewDaily,
-    );
-    const cachedProduct = await this.cacheService.get(
-      'product/' + id,
-      CachePatterns.Product,
-    );
-    if (cachedProduct) {
-      this.logger.log('Product found in cache');
-      return JSON.parse(cachedProduct);
-    }
-    this.logger.log('Product not found in cache');
+    // await this.cacheService.set(
+    //   'product-get',
+    //   id,
+    //   CachePatterns.ProductViewDaily,
+    // );
+    // const cachedProduct = await this.cacheService.get(
+    //   'product/' + id,
+    //   CachePatterns.Product,
+    // );
+    // if (cachedProduct) {
+    //   this.logger.log('Product found in cache');
+    //   return JSON.parse(cachedProduct);
+    // }
+    // this.logger.log('Product not found in cache');
     // const prod = await this.productService.getProductById(+id);
     const prod = await this.productService.getProductWithInventory(+id);
 
-    this.cacheService.set(
-      'product/' + id,
-      JSON.stringify(prod),
-      CachePatterns.Product,
-      86400,
-    );
+    // this.cacheService.set(
+    //   'product/' + id,
+    //   JSON.stringify(prod),
+    //   CachePatterns.Product,
+    //   86400,
+    // );
     return prod;
   }
 }

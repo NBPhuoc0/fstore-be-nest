@@ -1,37 +1,38 @@
-import { INestApplication, Module } from '@nestjs/common';
+import { MailerModule } from '@nestjs-modules/mailer';
+import { INestApplication, MiddlewareConsumer, Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AdminModule } from './admin/admin.module';
 import { AppController } from './app.controller';
 import AppService from './app.service';
 import { AuthModule } from './auth/auth.module';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ChatModule } from './chatbot/chat.module';
+import { CommonModule } from './common/common.module';
+import { LoggerMiddleware } from './common/middleware/logger';
 import {
-  Color,
-  User,
-  Product,
-  Category,
   Brand,
-  Size,
-  ProductVariant,
-  Photo,
-  Promotion,
-  Order,
-  OrderItem,
   Cart,
   CartItem,
+  Category,
+  Color,
+  Order,
+  OrderItem,
+  Photo,
+  Product,
+  ProductVariant,
+  Promotion,
+  Size,
+  User,
   Voucher,
 } from './entities';
-import { UserModule } from './user/user.module';
+import { Ticket } from './entities/ticket.entity';
+import { InventoryModule } from './inventory/inventory.module';
 import { OrderModule } from './order/order.module';
 import { ProductModule } from './product/product.module';
-import { CommonModule } from './common/common.module';
 import { PromotionModule } from './promotion/promotion.module';
-import { AdminModule } from './admin/admin.module';
-import { ScheduleModule } from '@nestjs/schedule';
-import { ChatModule } from './chatbot/chat.module';
-import { MailerModule } from '@nestjs-modules/mailer';
-import { EventEmitterModule } from '@nestjs/event-emitter';
-import { InventoryModule } from './inventory/inventory.module';
-import { Ticket } from './entities/ticket.entity';
+import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
@@ -115,6 +116,9 @@ export class AppModule {
 
   constructor(configService: ConfigService) {
     AppModule.port = configService.get<string>('PORT') || 8080;
+  }
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LoggerMiddleware).forRoutes('*');
   }
 
   static getBaseUrl(app: INestApplication): string {

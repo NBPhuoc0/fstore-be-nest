@@ -65,8 +65,6 @@ export class ProductService {
         'variants',
         'variants.color',
         'variants.size',
-        'colors',
-        'sizes',
       ],
       order: {
         id: 'ASC',
@@ -75,6 +73,87 @@ export class ProductService {
   }
 
   // lấy sản phẩm theo bộ lọc
+  // async getProductsWithFilter(
+  //   page?: number,
+  //   limit?: number,
+  //   category?: string,
+  //   brand?: string,
+  //   color?: string,
+  //   size?: string,
+  //   orderType?: number, // 1: price ASC, 2: price DESC, 3: newest, 4: oldest
+  // ): Promise<PaginatedResponse<Product>> {
+  //   if (!orderType || orderType < 1 || orderType > 4) {
+  //     orderType = 4;
+  //   }
+  //   const orderOptions: Record<
+  //     number,
+  //     { sort: string; order: 'ASC' | 'DESC' }
+  //   > = {
+  //     1: { sort: 'originalPrice', order: 'ASC' }, // Giá tăng dần
+  //     2: { sort: 'originalPrice', order: 'DESC' }, // Giá giảm dần
+  //     3: { sort: 'createdDate', order: 'DESC' }, // Mới nhất
+  //     4: { sort: 'createdDate', order: 'ASC' }, // Cũ nhất
+  //   };
+  //   page = Number(page) || 0; // Mặc định trang đầu tiên
+  //   limit = Number(limit) || 12; // Mặc định số lượng sản phẩm mỗi trang
+  //   const { sort, order } = orderOptions[orderType];
+  //   const query = this.dataSource
+  //     .createQueryBuilder(Product, 'product')
+  //     .leftJoinAndSelect('product.category', 'category')
+  //     .leftJoinAndSelect('product.brand', 'brand')
+  //     .leftJoinAndSelect('product.photos', 'photo')
+  //     .leftJoinAndSelect('product.variants', 'variants')
+  //     .leftJoinAndSelect('product.colors', 'colors')
+  //     .leftJoinAndSelect('variants.color', 'color')
+  //     .leftJoinAndSelect('variants.size', 'size')
+  //     .where('product.display = true')
+  //     .orderBy('product.' + sort, order) //
+  //     .take(limit) // Giới hạn số lượng sản phẩm trả về
+  //     .skip(page * limit); // Bỏ qua số lượng sản phẩm đã hiển thị
+
+  //   // Lọc theo category
+  //   if (category) {
+  //     const childrenCategories =
+  //       await this.productUtilsService.getChildrenCategoriesArr(+category);
+  //     if (childrenCategories.length > 1) {
+  //       query.andWhere('category.id IN (:...childrenCategories)', {
+  //         childrenCategories,
+  //       });
+  //     } else query.andWhere('category.id = :category', { category });
+  //   }
+
+  //   // Lọc theo brand
+  //   if (brand) {
+  //     query.andWhere('brand.id = :brand', { brand });
+  //   }
+
+  //   // Lọc theo color (màu sắc từ ProductVariant)
+  //   if (color) {
+  //     query.andWhere('color.id = :color', { color });
+  //   }
+
+  //   // Lọc theo size (kích thước từ ProductVariant)
+  //   if (size) {
+  //     query.andWhere('size.id = :size', { size });
+  //   }
+
+  //   // Lấy kết quả và tổng số sản phẩm
+
+  //   // this.logger.log(query.getQueryAndParameters()); // Log the query for debugging
+  //   let time = Date.now();
+  //   const [data, total] = await query.getManyAndCount();
+  //   time = Date.now() - time;
+
+  //   return {
+  //     data,
+  //     page,
+  //     limit,
+  //     total,
+  //     totalPages: Math.ceil(total / limit),
+  //     time,
+  //   };
+  // }
+
   async getProductsWithFilter(
     page?: number,
     limit?: number,
@@ -82,67 +161,78 @@ export class ProductService {
     brand?: string,
     color?: string,
     size?: string,
-    orderType?: number, // 1: price ASC, 2: price DESC, 3: newest, 4: oldest
+    orderType?: number,
   ): Promise<PaginatedResponse<Product>> {
     if (!orderType || orderType < 1 || orderType > 4) {
       orderType = 4;
     }
+
     const orderOptions: Record<
       number,
       { sort: string; order: 'ASC' | 'DESC' }
     > = {
-      1: { sort: 'originalPrice', order: 'ASC' }, // Giá tăng dần
-      2: { sort: 'originalPrice', order: 'DESC' }, // Giá giảm dần
-      3: { sort: 'createdDate', order: 'DESC' }, // Mới nhất
-      4: { sort: 'createdDate', order: 'ASC' }, // Cũ nhất
+      1: { sort: 'originalPrice', order: 'ASC' },
+      2: { sort: 'originalPrice', order: 'DESC' },
+      3: { sort: 'createdDate', order: 'DESC' },
+      4: { sort: 'createdDate', order: 'ASC' },
     };
-    page = Number(page) || 0; // Mặc định trang đầu tiên
-    limit = Number(limit) || 12; // Mặc định số lượng sản phẩm mỗi trang
+
+    page = Number(page) || 0;
+    limit = Number(limit) || 12;
     const { sort, order } = orderOptions[orderType];
-    const query = this.dataSource
+
+    // Query cơ sở - chỉ join những gì cần thiết
+    const baseQuery = this.dataSource
       .createQueryBuilder(Product, 'product')
-      .leftJoinAndSelect('product.category', 'category')
-      .leftJoinAndSelect('product.brand', 'brand')
       .leftJoinAndSelect('product.photos', 'photo')
       .leftJoinAndSelect('product.variants', 'variants')
-      .leftJoinAndSelect('product.colors', 'colors')
-      .leftJoinAndSelect('variants.color', 'color')
-      .leftJoinAndSelect('variants.size', 'size')
-      .where('product.display = true')
-      .orderBy('product.' + sort, order) //
-      .take(limit) // Giới hạn số lượng sản phẩm trả về
-      .skip(page * limit); // Bỏ qua số lượng sản phẩm đã hiển thị
+      .where('product.display = true');
+
+    // Chỉ join color/size nếu cần filter
+    if (color || size) {
+      baseQuery
+        .leftJoinAndSelect('variants.color', 'color')
+        .leftJoinAndSelect('variants.size', 'size');
+    }
 
     // Lọc theo category
     if (category) {
       const childrenCategories =
         await this.productUtilsService.getChildrenCategoriesArr(+category);
       if (childrenCategories.length > 1) {
-        query.andWhere('category.id IN (:...childrenCategories)', {
+        baseQuery.andWhere('product.categoryId IN (:...childrenCategories)', {
           childrenCategories,
         });
-      } else query.andWhere('category.id = :category', { category });
+      } else {
+        baseQuery.andWhere('product.categoryId = :category', { category });
+      }
     }
 
     // Lọc theo brand
     if (brand) {
-      query.andWhere('brand.id = :brand', { brand });
+      baseQuery.andWhere('product.brandId = :brand', { brand });
     }
 
-    // Lọc theo color (màu sắc từ ProductVariant)
+    // Lọc theo color
     if (color) {
-      query.andWhere('color.id = :color', { color });
+      baseQuery.andWhere('color.id = :color', { color });
     }
 
-    // Lọc theo size (kích thước từ ProductVariant)
+    // Lọc theo size
     if (size) {
-      query.andWhere('size.id = :size', { size });
+      baseQuery.andWhere('size.id = :size', { size });
     }
 
-    // Lấy kết quả và tổng số sản phẩm
+    // Đếm tổng TRƯỚC khi apply pagination
+    const total = await baseQuery.getCount();
 
-    // this.logger.log(query.getQueryAndParameters()); // Log the query for debugging
-    const [data, total] = await query.getManyAndCount();
+    // Apply sorting và pagination
+    const data = await baseQuery
+      .distinct(true)
+      .orderBy('product.' + sort, order)
+      .take(limit)
+      .skip(page * limit)
+      .getMany();
 
     return {
       data,
@@ -164,12 +254,30 @@ export class ProductService {
         'variants',
         'variants.color',
         'variants.size',
-        'colors',
-        'sizes',
         // 'variants.inventory',
       ],
     });
   }
+
+  // async getProductWithInventory(productId: number) {
+  //   const product = await Product.findOne({
+  //     where: { id: productId },
+  //     relations: ['variants', 'brand', 'category', 'photos'], // các relations khác
+  //   });
+
+  //   if (!product) throw new NotFoundException('Product not found');
+
+  //   for (const variant of product.variants) {
+  //     const { sum } = await Inventory.createQueryBuilder('batch')
+  //       .select('SUM(batch.remainingQuantity)', 'sum')
+  //       .where('batch.variantId = :variantId', { variantId: variant.id })
+  //       .getRawOne();
+
+  //     variant['stockQuantity'] = Number(sum) || 0;
+  //   }
+
+  //   return product;
+  // }
 
   async getProductWithInventory(productId: number) {
     const product = await Product.findOne({
@@ -179,25 +287,34 @@ export class ProductService {
 
     if (!product) throw new NotFoundException('Product not found');
 
-    for (const variant of product.variants) {
-      const { sum } = await Inventory.createQueryBuilder('batch')
-        .select('SUM(batch.remainingQuantity)', 'sum')
-        .where('batch.variantId = :variantId', { variantId: variant.id })
-        .getRawOne();
+    // Lấy tất cả inventory cho tất cả variants cùng 1 query
+    const variantIds = product.variants.map((v) => v.id);
+    const inventorySums = await Inventory.createQueryBuilder('batch')
+      .select('batch.variantId', 'variantId')
+      .addSelect('SUM(batch.remainingQuantity)', 'sum')
+      .where('batch.variantId IN (:...variantIds)', { variantIds })
+      .groupBy('batch.variantId')
+      .getRawMany();
 
-      variant['stockQuantity'] = Number(sum) || 0;
-    }
+    // Map kết quả vào variants
+    const inventoryMap = Object.fromEntries(
+      inventorySums.map((inv) => [inv.variantId, Number(inv.sum) || 0]),
+    );
+    product.variants.forEach((variant) => {
+      variant['stockQuantity'] = inventoryMap[variant.id] || 0;
+    });
 
     return product;
   }
 
   async getProductsByIds(ids: number[]): Promise<Product[]> {
-    // if (!ids || ids.length === 0) {
-    //   throw new BadRequestException('Product IDs are required');
-    // }
-    return Product.findBy({
-      id: In(ids),
-    });
+    if (!ids?.length) return [];
+    return this.dataSource
+      .createQueryBuilder(Product, 'product')
+      .leftJoinAndSelect('product.photos', 'photo')
+      .leftJoinAndSelect('product.variants', 'variants')
+      .where('product.id IN (:...ids)', { ids })
+      .getMany();
   }
 
   async getIdsandNames(): Promise<{ id: number; name: string }[]> {

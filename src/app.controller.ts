@@ -9,16 +9,15 @@ import {
   Redirect,
   Res,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import AppService from './app.service';
 import { ChatService } from './chatbot/chat.service';
-import { get } from 'http';
-import { ProductService } from './product/services/product.service';
-import { PaginatedResponse } from './dto/res/paginated-response.dto';
-import { Order, Product } from './entities';
-import { TicketService } from './order/services/ticket.service';
 import { CreateTicketDto } from './dto/req/create-ticket.dto';
+import { PaginatedResponse } from './dto/res/paginated-response.dto';
+import { Product } from './entities';
+import { TicketService } from './order/services/ticket.service';
+import { ProductService } from './product/services/product.service';
 import { PromotionService } from './promotion/promotion.service';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Controller()
 export class AppController {

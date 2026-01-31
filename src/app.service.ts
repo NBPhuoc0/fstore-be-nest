@@ -1,16 +1,14 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { CacheService } from './common/services/cache.service';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { MailerService } from '@nestjs-modules/mailer';
-import { orderSubmitTemplate } from './common/email-template/order-submit';
-import { orderDeliveredTemplate } from './common/email-template/order-delivered';
+import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { orderDeliveredTemplate } from './common/email-template/order-delivered';
+import { orderSubmitTemplate } from './common/email-template/order-submit';
 
 @Injectable()
 export default class AppService {
   private readonly logger = new Logger('AppService');
   constructor(
-    private readonly cacheService: CacheService,
     private readonly mailerService: MailerService,
   ) {}
 

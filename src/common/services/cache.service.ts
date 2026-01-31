@@ -1,5 +1,5 @@
 import KeyvRedis, { Keyv } from '@keyv/redis';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cacheable } from 'cacheable';
 
